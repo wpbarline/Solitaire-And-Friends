@@ -32,7 +32,7 @@ const assert=require('node:assert/strict');
   // Wait for full precaching, then simulate an offline installed-phone reload.
   await page.waitForFunction(async()=>{
    if(!navigator.serviceWorker.controller)return false;
-   const c=await caches.open('solitaire-friends-v2');return (await c.keys()).length>=100;
+   const c=await caches.open('solitaire-friends-v3');return (await c.keys()).length>=100;
   },null,{timeout:60000});
   await context.setOffline(true);await page.reload();await page.waitForFunction(()=>window.__sol?.state);
   assert.deepEqual(await page.evaluate(()=>window.__sol.state),state);
