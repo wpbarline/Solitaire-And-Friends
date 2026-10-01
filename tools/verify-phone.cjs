@@ -35,7 +35,7 @@ const assert=require('node:assert/strict');
   await page.evaluate(async()=>{
    await Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>setTimeout(()=>reject(Error('Worker installation timeout')),25000))]);
    if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}));
-   const c=await caches.open('solitaire-friends-v5');
+   const c=await caches.open('solitaire-friends-v6');
    if((await c.keys()).length<100)throw Error('Offline cache incomplete');
   });
   await context.setOffline(true);await page.reload();await page.waitForFunction(()=>window.__sol?.state);

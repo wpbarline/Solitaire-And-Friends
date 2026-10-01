@@ -8,8 +8,8 @@ function applyUpdate(){
  reloading=true;dispatchEvent(new Event('game-before-update'));location.reload();
 }
 if('serviceWorker' in navigator){
- const hadController=!!navigator.serviceWorker.controller;
- navigator.serviceWorker.addEventListener('controllerchange',()=>{if(hadController){pending=true;applyUpdate();}});
+ let controlled=!!navigator.serviceWorker.controller;
+ navigator.serviceWorker.addEventListener('controllerchange',()=>{if(controlled){pending=true;applyUpdate();}else controlled=true;});
  const swUrl=new URL('../../sw.js',import.meta.url),scope=new URL('../../',import.meta.url);
  navigator.serviceWorker.register(swUrl,{scope,updateViaCache:'none'}).then(reg=>{
   reg.update().catch(()=>{});
