@@ -27,13 +27,14 @@ const SAVE_KEY='solitaire-friends-game-v1', STATS_KEY='solitaire-friends-stats-v
 let seed=0,drawCount=1,elapsed=0,initial=null,autoTimer=null,dealKind='Classic',winRecorded=false;
 let currentHint=null,hintIndex=0;
 let reversing=false;
+let checkpointSequence=0;
 let stats={played:0,wins:0,bestMoves:null,bestTime:null,highScores:[]};
 try{stats={...stats,...JSON.parse(localStorage.getItem(STATS_KEY))};}catch{}
 function stopAuto(){clearInterval(autoTimer);autoTimer=null;}
 function snapshot(){return abSnapshot({stock,waste,foundations,tableau,moves});}
 function saveGame(){
   if(!cards)return;
-  try{localStorage.setItem(SAVE_KEY,JSON.stringify({version:1,seed,drawCount,elapsed,initial,dealKind,winRecorded,shufflesLeft,rewindsLeft,state:snapshot(),history}));}catch{ announce('Storage is full. This game may not resume after closing.'); }
+  try{const previous=localStorage.getItem(SAVE_KEY);if(previous)localStorage.setItem(SAVE_KEY+'-previous',previous);localStorage.setItem(SAVE_KEY,JSON.stringify({version:1,savedAt:Date.now(),checkpoint:++checkpointSequence,seed,drawCount,elapsed,initial,dealKind,winRecorded,shufflesLeft,rewindsLeft,state:snapshot(),history}));}catch{ announce('Storage is full. This game may not resume after closing.'); }
 }
 function saveStats(){try{localStorage.setItem(STATS_KEY,JSON.stringify(stats));}catch{}}
 function applySnapshot(s){const restored=abRestore(s,cardsById);({stock,waste,foundations,tableau,moves}=restored);}
@@ -70,10 +71,18 @@ function restart(){
   if(!initial||reversing)return;if(moves>0&&!confirm('Restart these same cards from the beginning?'))return;stopAuto();clearHint();applySnapshot(initial);history=[];shufflesLeft=1;rewindsLeft=3;elapsed=0;won=false;
   hideWin();layout(true);updateBar();announce('Same cards, fresh start.');
 }
+function readCheckpoint(){
+ for(const key of [SAVE_KEY,SAVE_KEY+'-previous']){
+  try{const s=JSON.parse(localStorage.getItem(key));
+   if(s?.version===1&&validSnapshot(s.state)&&validSnapshot(s.initial)&&[1,3].includes(s.drawCount)&&Number.isFinite(s.elapsed)&&s.elapsed>=0&&Array.isArray(s.history)&&s.history.every(validSnapshot))return s;
+  }catch{}
+ }return null;
+}
 function resume(){
   try{
-    const saved=JSON.parse(localStorage.getItem(SAVE_KEY));
+    const saved=readCheckpoint();
     if(saved?.version!==1 || !validSnapshot(saved.state) || !validSnapshot(saved.initial) || ![1,3].includes(saved.drawCount) || !Number.isFinite(saved.elapsed)||saved.elapsed<0||!Array.isArray(saved.history)||!saved.history.every(validSnapshot))return false;
+    checkpointSequence=Number(saved.checkpoint)||0;
     seed=saved.seed>>>0;drawCount=saved.drawCount;elapsed=saved.elapsed;initial=saved.initial;dealKind=saved.dealKind==='Daily'?'Daily':'Classic';winRecorded=!!saved.winRecorded;
     deal();applySnapshot(saved.state);history=saved.history;shufflesLeft=saved.shufflesLeft===0?0:1;
     rewindsLeft=Number.isInteger(saved.rewindsLeft)?Math.max(0,Math.min(3,saved.rewindsLeft)):3;
@@ -316,8 +325,8 @@ function onPointerUp(ev){
 function hitTest(cx, cy){
   if(!geo) return null;
   const r=board.getBoundingClientRect(); const x=cx-r.left, y=cy-r.top;
-  const {gap,CW,CH,topY,tabY,colX}=geo;
-  if(y>=topY-CH*0.4 && y<=topY+CH*1.2) for(let f=0;f<4;f++){ const fx=colX(3+f); if(x>=fx-gap && x<=fx+CW+gap) return {type:'foundation',idx:f}; }
+  const {gap,CW,CH,topY,tabY,colX,foundationX}=geo;
+  if(y>=topY-CH*0.4 && y<=topY+CH*1.2) for(let f=0;f<4;f++){ const fx=foundationX(f); if(x>=fx-gap && x<=fx+CW+gap) return {type:'foundation',idx:f}; }
   if(y>=tabY-CH*0.4) for(let c=0;c<7;c++){ const cx2=colX(c); if(x>=cx2-gap && x<=cx2+CW+gap) return {type:'tableau',col:c}; }
   return null;
 }
@@ -326,32 +335,39 @@ function hitTest(cx, cy){
 function layout(instant){
   if(instant) board.classList.add('no-anim');
   const W = board.clientWidth || 360;
+  const H = board.clientHeight || 500;
   const pad = Math.max(6, Math.round(W*0.012));
   const gap = Math.max(4, Math.round(W*0.012));
-  const CW = Math.max(38, Math.min(96, Math.floor((W - 2*pad - 6*gap) / 7)));
+  const CW = Math.max(38, Math.min(96, Math.floor((H-2*pad-24)/3.5), Math.floor((W - 2*pad - 6*gap) / 7)));
   const CH = Math.round(CW*ASPECT);
   board.style.setProperty('--cw', CW+'px'); board.style.setProperty('--ch', CH+'px');
-  const colX = c => pad + c*(CW+gap);
+  const tableLeft=Math.max(pad,(W-7*CW-6*gap)/2);
+  const colX = c => tableLeft + c*(CW+gap);
   const topY = pad;
   const tabY = pad + CH + Math.round(gap*1.6);
   const dyDown = Math.max(24,Math.round(CH*0.17)), dyUp = Math.max(28,Math.round(CH*0.36));
-  geo = {gap, CW, CH, topY, tabY, colX};
+  const right=preferences.deckOnRight;
+  const stockX=colX(right?6:0),wasteX=colX(right?5:1);
+  const foundationX=f=>colX(right?f:3+f);
+  geo = {gap, CW, CH, topY, tabY, colX,foundationX};
 
-  setSlot('stock', colX(0), topY); setSlot('waste', colX(1), topY);
-  for(let f=0;f<4;f++) setSlot('f'+f, colX(3+f), topY);
+  setSlot('stock', stockX, topY); setSlot('waste', wasteX, topY);
+  for(let f=0;f<4;f++) setSlot('f'+f, foundationX(f), topY);
   for(let c=0;c<7;c++) setSlot('t'+c, colX(c), tabY);
 
   let maxY = tabY + CH;
-  stock.forEach((card,i)=> put(card, colX(0), topY, i));
+  stock.forEach((card,i)=> put(card, stockX, topY, i));
   const ws = Math.max(0, waste.length-3);
-  waste.forEach((card,i)=> put(card, colX(1) + Math.max(0,i-ws)*Math.round(CW*0.24), topY, i));
-  for(let f=0;f<4;f++) foundations[f].forEach((card,i)=> put(card, colX(3+f), topY, i));
+  waste.forEach((card,i)=> put(card, wasteX + (right?-1:1)*Math.max(0,i-ws)*Math.round(CW*0.24), topY, i));
+  for(let f=0;f<4;f++) foundations[f].forEach((card,i)=> put(card, foundationX(f), topY, i));
   for(let c=0;c<7;c++){
     let y=tabY, lastY=tabY; const p=tableau[c];
-    p.forEach((card,i)=>{ put(card, colX(c), y, i); lastY=y; y += card.up?dyUp:dyDown; });
+    const wanted=p.slice(0,-1).reduce((n,card)=>n+(card.up?dyUp:dyDown),0);
+    const fit=Math.min(1, Math.max(0,H-pad-tabY-CH)/Math.max(1,wanted));
+    p.forEach((card,i)=>{ put(card, colX(c), y, i); lastY=y; y += (card.up?dyUp:dyDown)*fit; });
     maxY = Math.max(maxY, lastY + CH);
   }
-  board.style.height = (maxY + pad) + 'px';
+  // Height is supplied by the viewport grid; fan spacing fits each column.
   if(instant){ void board.offsetWidth; board.classList.remove('no-anim'); }
 }
 function setSlot(name,x,y){ const e=slotEl[name]; if(e) e.style.transform=`translate(${x}px,${y}px)`; }
@@ -448,10 +464,14 @@ if(board){
     get drawCount(){return drawCount;},
     get historyLength(){return history.length;},
   };
+  new ResizeObserver(()=>layout(true)).observe(board);
   let rt; addEventListener('resize', ()=>{ clearTimeout(rt); rt=setTimeout(()=>layout(true), 120); });
   if(!resume())newGame();
   setInterval(()=>{if(!won&&!document.hidden){elapsed++;updateBar(false);if(elapsed%5===0)saveGame();}},1000);
   document.addEventListener('visibilitychange',()=>{if(document.hidden){stopAuto();saveGame();}});
   addEventListener('pagehide',saveGame);
+  document.addEventListener('freeze',saveGame);
+  addEventListener('game-before-update',saveGame);
+  addEventListener('game-settings',()=>layout(true));
   Promise.race([ preloadDeck(), new Promise(r => setTimeout(r, 3500)) ]).then(hideLoader);
 }

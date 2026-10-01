@@ -1,6 +1,6 @@
 // Shared by Solitaire, Uno and future games. No card artwork is modified.
 const KEY = 'solitaire-friends-settings-v1';
-const defaults = {effects:true, effectsVolume:.65, music:false, musicVolume:.2, reducedMotion:false, haptics:false};
+const defaults = {deckOnRight:true, effects:true, effectsVolume:.65, music:true, musicVolume:.2, reducedMotion:false, haptics:false};
 let stored;
 try { stored=JSON.parse(localStorage.getItem(KEY)); } catch {}
 export const preferences = {...defaults, ...stored};

@@ -1,0 +1,38 @@
+html,body{width:100%;height:100%;margin:0;overflow:hidden;overscroll-behavior:none}
+body{height:100dvh;padding:0;background:radial-gradient(ellipse at 50% 15%,#157a50,#064632 70%,#042e25);display:block}
+.game-screen{height:100%;width:100%;max-width:1100px;margin:auto;padding:env(safe-area-inset-top,0px) max(6px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px);display:grid;grid-template-rows:46px 26px minmax(0,1fr) 46px 64px;gap:0;overflow:hidden}
+.game-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 8px;color:#fff0c3;font:700 17px system-ui}
+.game-header a,.game-header button{display:flex;align-items:center;justify-content:center;min-width:44px;min-height:40px;border:1px solid #edce7966;border-radius:12px;padding:7px 12px;color:#fff3c9;text-decoration:none;background:#073e30;font:600 15px system-ui}
+.game-hud{display:flex;align-items:center;justify-content:center;gap:22px;color:#fff0ca;font:600 13px system-ui;white-space:nowrap}
+.board-wrap{min-height:0;min-width:0;overflow:hidden;position:relative}
+.board{width:100%;max-width:none;height:100%!important;min-height:0;margin:0;overflow:hidden}
+.game-actions{display:grid;grid-template-columns:1fr 1fr 1.25fr;align-items:center;gap:8px;padding:4px 8px 8px}
+.game-actions .btn{height:48px;padding:8px 12px;font:700 16px system-ui;box-shadow:0 4px 0 #063224,0 7px 12px #0003}
+.game-actions .candy{background:linear-gradient(#ffb9d7,#e55c9a);color:#3d1230;box-shadow:0 4px 0 #923963,0 7px 12px #0003}
+.game-actions .reverse{background:linear-gradient(#cfbfff,#9d81e1);color:#281844;box-shadow:0 4px 0 #624399,0 7px 12px #0003}
+.game-actions button:disabled{opacity:.5;box-shadow:none;transform:none;cursor:default}
+#reverseCount{font-size:12px;display:block;margin-top:3px}
+.hint-strip{display:flex;align-items:center;justify-content:center;gap:8px;padding:2px 8px;overflow:hidden;background:#063d2c88;border-radius:12px;color:#fff4cc}
+.hint-text{margin:0;padding:0;min-height:0;max-height:40px;overflow:hidden;font:14px/1.35 system-ui;text-align:center;flex:1}
+#playHint{white-space:nowrap;min-height:38px;padding:8px 12px;font:700 14px system-ui}
+#playHint[hidden]{display:none}
+#gameMenu{background:linear-gradient(#185741,#083a2d);color:#fff1c9;border:2px solid #d4af61;border-radius:24px;width:min(92vw,440px);max-height:calc(100dvh - 20px);padding:18px;overflow:hidden}
+#gameMenu::backdrop{background:#021711aa;backdrop-filter:blur(4px)}
+.menu-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.menu-heading h2{font:700 24px system-ui;margin:0}.menu-heading button{min-height:40px;padding:8px 15px}
+.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.menu-grid button,.menu-grid a,.menu-grid label{min-height:46px;display:flex;align-items:center;justify-content:center;text-decoration:none;padding:8px;border-radius:14px;background:#0c4132;color:#ffe9b0;border:1px solid #d4af6160;font:600 15px system-ui;text-align:center;gap:5px}.menu-grid select{padding:5px;color:#fff1c9;background:#0a3027;border-radius:8px}
+#stats{font:14px system-ui;text-align:center;margin:12px 0 0}
+.phone-nav{display:none!important}.sol-load{background:#0c5239}.sol-load-logo{width:200px;height:auto}.sol-load-text{font-family:system-ui}
+@media(orientation:landscape) and (max-height:550px){.game-screen{grid-template-rows:40px 22px minmax(0,1fr) 34px 52px}.game-actions{padding:2px 8px 4px}.game-actions .btn{height:42px;font-size:14px}#reverseCount{display:inline;margin-left:5px}.hint-text{font-size:13px;max-height:30px}.menu-grid{grid-template-columns:repeat(3,1fr)}#gameMenu{width:min(92vw,660px);padding:12px}.menu-heading{margin-bottom:6px}.menu-grid button,.menu-grid a,.menu-grid label{min-height:40px;font-size:14px}#stats{margin-top:6px}.game-hud{gap:20px}}
+
+/* The table is the screen; utilities live in one menu. */
+*{box-sizing:border-box}
+.game-screen{grid-template-rows:44px minmax(0,1fr) 38px 64px;max-width:1000px}
+.game-tools{display:flex;align-items:center;gap:8px;padding:0 6px}
+.game-tools>a,.game-tools>button{width:44px;height:40px;display:grid;place-items:center;border:0;background:transparent;color:#f5e6bc;text-decoration:none;font:26px system-ui;border-radius:12px}
+.game-tools>button:active,.game-tools>a:active{background:#ffffff20}
+.game-hud{flex:1;gap:16px;font:12px system-ui;color:#d8e7dc}
+.board{background:transparent!important}
+.game-actions .btn{border:0;border-radius:18px;font-family:system-ui}
+.hint-strip{background:transparent}
+.hint-text{color:#c9ddcf;font-size:13px}
+@media(orientation:landscape) and (max-height:550px){.game-screen{grid-template-rows:36px minmax(0,1fr) 28px 50px}.game-tools>a,.game-tools>button{height:34px}.game-actions .btn{height:40px}}

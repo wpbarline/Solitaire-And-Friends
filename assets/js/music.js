@@ -1,5 +1,5 @@
 import {preferences,setPreference} from './preferences.js';
-const player=new Audio(new URL('../audio/music.mp3',import.meta.url));player.loop=true;player.preload='none';
+const player=new Audio(new URL('../audio/cozy-puzzle.ogg',import.meta.url));player.loop=true;player.preload='none';
 let gestured=false;
 function sync(){
   player.volume=preferences.musicVolume;

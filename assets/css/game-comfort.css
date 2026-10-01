@@ -11,3 +11,13 @@ button:focus-visible,a:focus-visible,[role=button]:focus-visible{outline:3px sol
 
 .phone-nav{display:none}
 @media(max-width:900px){body{padding-bottom:calc(82px + env(safe-area-inset-bottom,0px))}.phone-nav{position:fixed;bottom:0;left:0;right:0;z-index:500;display:grid;grid-template-columns:repeat(4,1fr);background:#133c34;border-top:1px solid #e9c34a66;padding:8px 6px calc(8px + env(safe-area-inset-bottom,0px));gap:6px}.phone-nav a,.phone-nav button{display:flex;align-items:center;justify-content:center;min-height:48px;background:#204e42;border:0;border-radius:14px;color:#fff0c8;text-decoration:none;font:600 15px system-ui;cursor:pointer}}
+
+.ds-panel [hidden]{display:none!important}.ds-panel{overflow:hidden;max-height:calc(100dvh - 20px);font-family:system-ui;border-radius:24px}
+.settings-tabs{display:flex;gap:8px;margin:0 26px 12px 0}.settings-tabs button{flex:1;min-height:40px;border:0;border-radius:12px;background:#ffffff15;color:#f4e6c4;font:600 16px system-ui}.settings-tabs button[aria-pressed=true]{background:#e5b5d5;color:#38162d}
+.ds-panel .audio-settings{border:0;padding:0;margin:0}.ds-panel .audio-settings label{min-height:36px;margin:0;gap:8px}.ds-panel .audio-settings h2{display:none}.ds-panel .audio-settings small{font-size:11px}.ds-panel .ds-swatch img{max-height:130px;width:auto;margin:auto}
+@media(orientation:landscape) and (max-height:550px){.ds-panel{width:min(700px,94vw);padding:12px 18px}.ds-panel .audio-settings{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px}.ds-panel .ds-swatches{grid-template-columns:repeat(6,1fr)}.ds-panel .ds-swatch img{max-height:110px}.ds-panel .ds-link{margin-top:8px}}
+
+body:has(.game-screen),body:has(.primary-play){user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+input,textarea,[contenteditable="true"]{user-select:text;-webkit-user-select:text}
+.game-screen img,.logo-img{pointer-events:none;-webkit-user-drag:none}
+.game-screen button,.game-screen a,.primary-play,.tile{touch-action:manipulation;-webkit-tap-highlight-color:transparent}

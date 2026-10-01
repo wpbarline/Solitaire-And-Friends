@@ -19,11 +19,18 @@ function audioControls(panel){
     const k=input.dataset.pref;if(input.type==='checkbox')input.checked=preferences[k];else input.value=preferences[k];
     input.addEventListener('input',()=>{sfx.unlock();setPreference(k,input.type==='checkbox'?input.checked:Number(input.value));});
   });
-  box.querySelector('#soundPreview').onclick=()=>{sfx.unlock();sfx.shuffle();setTimeout(()=>sfx.deal(),700);};
+  box.querySelector('#soundPreview').onclick=()=>{sfx.unlock();setPreference('effects',true);sfx.shuffle();setTimeout(()=>sfx.deal(),1450);};
   panel.appendChild(box);
+  if(panel.classList.contains('ds-panel')){
+    const tabs=document.createElement('div');tabs.className='settings-tabs';tabs.innerHTML='<button type="button" aria-pressed="true">Sound</button><button type="button" aria-pressed="false">Cards</button>';panel.prepend(tabs);
+    const children=[...panel.children].filter(e=>e!==tabs&&!e.classList.contains('ds-close'));
+    function tab(audio){children.forEach(e=>e.hidden=audio?e!==box:e===box);[...tabs.children].forEach((e,i)=>e.setAttribute('aria-pressed',String(i===(audio?0:1))));}
+    tabs.children[0].onclick=()=>tab(true);tabs.children[1].onclick=()=>tab(false);tab(true);
+  }
 }
 export function openSettings(){
   returnFocus=document.activeElement;
+  const menu=document.getElementById('gameMenu');if(menu?.open)menu.close();
   if(window.DeckPrefs){window.DeckPrefs.open();audioControls(document.querySelector('#deck-settings .ds-panel'));}
   else {
     let dlg=document.getElementById('audio-dialog');

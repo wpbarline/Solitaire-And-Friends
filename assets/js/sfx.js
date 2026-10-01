@@ -100,29 +100,30 @@ function shh({t0=0, dur=0.22, gain=0.05, f0=900, f1=4200}){
 
 
 // Recorded cues are predecoded after the first gesture. Synthesis remains a fallback.
-const buffers=new Map();let loading=false,active=0,lastClip=0;
+const buffers=new Map();let loading=false,active=0,lastClip=-1;
 const clips=['deal-1.wav','deal-2.wav','deal-3.wav','shuffle.wav','tap.ogg','reward.ogg','tada.ogg'];
 async function loadClips(){
   if(loading)return;loading=true;const c=ac();if(!c)return;
   await Promise.all(clips.map(async name=>{try{const r=await fetch(new URL('../audio/'+name,import.meta.url));if(r.ok)buffers.set(name,await c.decodeAudioData(await r.arrayBuffer()));}catch{}}));
 }
+loadClips();
 addEventListener('pointerdown',loadClips,{once:true});addEventListener('keydown',loadClips,{once:true});
 function recorded(name){
   if(muted || document.hidden)return true;
-  const c=ac(),b=buffers.get(name);if(!c||!b){loadClips();return false;}
+  primeUnlock();const c=ac(),b=buffers.get(name);if(!c||!b){loadClips();return true;}
   if(active>=4||c.currentTime-lastClip<.045)return true;
   lastClip=c.currentTime;active++;const source=c.createBufferSource(),gain=c.createGain();source.buffer=b;
-  gain.gain.value=preferences.effectsVolume*.6;source.connect(gain);gain.connect(c.destination);
+  gain.gain.value=preferences.effectsVolume;source.connect(gain);gain.connect(c.destination);
   source.onended=()=>{active--;source.disconnect();gain.disconnect();};source.start();return true;
 }
 
 /* --- card-game voices ----------------------------------------------------- */
 export const deal      = () => { if(recorded('deal-'+(1+Math.floor(Math.random()*3))+'.wav'))return; shh({dur:0.12, gain:0.035, f0:1600, f1:3000}); tone({type:'square', from:680, to:520, dur:0.05, gain:0.045}); };
 export const flip      = () => { if(recorded('tap.ogg'))return; tone({type:'square', from:430, to:880, dur:0.06, gain:0.07}); };
-export const pickup    = () => { tone({type:'triangle', from:300, to:420, dur:0.05, gain:0.06}); };
+export const pickup = () => { recorded('deal-1.wav'); };
 export const place     = () => { if(recorded('deal-2.wav'))return; tone({type:'square', from:520, to:700, dur:0.07, gain:0.07}); };
 export const foundation= () => { if(recorded('reward.ogg'))return; tone({type:'sine', from:760, to:1280, dur:0.14, gain:0.09}); tone({type:'square', from:1180, t0:0.05, dur:0.1, gain:0.04}); };
-export const invalid   = () => { tone({type:'sawtooth', from:180, to:110, dur:0.18, gain:0.09, glide:'lin'}); };
+export const invalid = () => {};
 
 /** Riffle shuffle — a burst of short filtered-noise ticks, then a soft settle. */
 export function shuffle(){
