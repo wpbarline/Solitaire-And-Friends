@@ -4,3 +4,10 @@ tools/home-*.png
 __pycache__/
 *.pyc
 .DS_Store
+
+node_modules/
+dist/
+tools/.test-profile/
+tools/references/
+
+tools/.test-react*/

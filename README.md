@@ -1,87 +1,17 @@
-# Solitaire and Friends — phone-first release
+# Solitaire and Friends
 
 Live: https://wpbarline.github.io/Solitaire-And-Friends/
 
-Solitaire now includes hints and guided moves, tap/drag, unlimited undo, three multi-move Time Reverse charges, Draw 1/3, save/resume, daily deals, statistics and local high scores, optional music/effects/haptics, sharing, and an offline installable PWA. Original card art is preserved. See RELEASE-NOTES.md and ACCESSIBILITY-AND-UX.md for tests and practical limits.
+A React/Vite game shell with an animated title, original protected card artwork, tap/drag/guided hints, opening and fresh-deal cascades, local scores, physical card sounds, mallet interface cues, music, Undo and three Time Reverse charges. One Surprise rescue per deal can bring a useful buried stock card to the waste; assisted wins are marked.
 
-Android: open the live site in Chrome/Edge and choose Install on your phone, or the browser menu → Install app/Add to Home screen. Stats and saves are local to each device; there is no cross-device account sync. Music defaults off.
+Install from Android Chrome/Edge’s Install app/Add to Home screen menu. Game state and move history checkpoint after every move and restore after closure. Offline assets install automatically; updates save the game and reload between interactions. Scores and saves stay on each device. Music starts after a user gesture; separate sound/music settings are saved.
 
-## Original project notes
+## Development
 
-# Solitaire and Friends
+Use Node 22 or newer: npm ci, npm run dev. Production: npm run build; npm run preview. GitHub Actions publishes dist to Pages. React owns the shell and controls; the JavaScript controller owns card transforms and rules. Original card files and saved preference keys remain compatible. Other games retain their existing engines while Solitaire is improved. Painter is removed from the picker; its source remains preserved.
 
-A cozy, **ad-free** game arcade — built for Arline, who loves Solitaire and Uno.
-No ads, no sign-ups, no tracking. Just open it and play.
+## Verification
 
-🔗 **Live:** https://mansfieldplumbing.github.io/ArlineArcade/
+Run tools/protect_card_art.py and tools/verify-rules.mjs. Against the production preview, run tools/verify-react.cjs, verify-react-state.cjs, verify-react-audio.cjs, verify-react-offline.cjs, verify-deal.cjs and verify-update.cjs with Node. These browser checks use this laptop’s bundled Playwright and headless Edge; GAME_URL can select the deployed site except for the local service-worker update test. Earlier non-React browser checks document the previous implementation and are superseded by this suite.
 
-## Games
-
-| Game | Status | Notes |
-|------|--------|-------|
-| ♠ Solitaire (Klondike) | ✅ Playable | Tap-to-move + drag-and-drop, auto-finish, gold deck, ⟲ Rewind ×3 + ✦ Magic Shuffle ×1 |
-| 🃏 FreeCell | ✅ Playable | All cards face-up, supermoves, ⟲ Rewind ×3 |
-| ♥ Uno | ✅ Playable | 2–4 players vs. friendly computer opponents |
-| ♦ Minesweeper | ✅ Playable | Self-contained applet |
-| ♣ Painter | ✅ Playable | Simple finger painting — big swatches, undo, save |
-| 🎲 Craps | ✅ Playable | 3D dice, come-out/point flow (betting on the roadmap) |
-| 🎡 Roulette | ✅ Playable | European wheel, chips & bankroll, payouts sim-proven |
-| 🎳 Bowling | ✅ Playable | Flick-to-bowl, ten frames, real scoring (sim-proven 300) |
-| 🏀 Basketball | ✅ Playable | 60-second pop-a-shot, streaks, ON FIRE |
-| 🏓 Ping Pong | ✅ Playable | Curveball-style golden tunnel, spin the ball past the machine |
-
-Every game engine is proven by a headless Node simulation (`node games/<name>/sim.mjs`)
-before it ships. More games on the way — the plan lives in [`ROADMAP.md`](ROADMAP.md).
-
-## How it's built
-
-Vanilla **HTML / CSS / JS** — no React, no build step, no dependencies.
-Drop it on any static host (it runs straight on GitHub Pages) and it works.
-
-The home page is a **shell**: a card grid that launches each game as a standalone
-**cell** under `games/`. Every cell is its own self-contained page, so games can be
-added or updated without touching the others.
-
-```
-/
-├── index.html              ← the arcade (shell / launcher)
-├── styles/app.css          ← shared theme (one CSS-variable contract)
-├── assets/
-│   ├── fonts/              ← Cascadia Code NF + Selawik (local, no CDN)
-│   └── favicon.svg
-├── manifest.webmanifest    ← installable as a PWA
-└── games/
-    ├── solitaire/         ← coming soon
-    ├── uno/               ← coming soon
-    ├── minesweeper/       ← playable
-    └── painter/           ← playable (flickpaint)
-```
-
-## Run it locally
-
-No tooling required — just a static server so module imports resolve:
-
-```bash
-python3 -m http.server 8000
-# then open http://localhost:8000/
-```
-
-## Credits & recipes
-
-The look and structure follow the same recipes as the sibling projects
-[`art4quinn`](https://github.com/MansfieldPlumbing/art4quinn) and
-[`MansfieldTeachesTyping`](https://github.com/MansfieldPlumbing/MansfieldTeachesTyping):
-dark palette, warm-gold accent, Selawik display type, responsive card grid.
-
-- **Fonts** — Cascadia Code (Nerd Font) and Selawik, both open-source from Microsoft.
-- **Painter** — the `flickpaint` canvas app, simplified into a big-buttons finger-painting page.
-- **Minesweeper** — a self-contained HTML applet.
-- **Playing cards** — number faces, gold frame, and the filigree back are original to
-  this repo. The J/Q/K court figures are Byron Knoll's vector deck (**public domain**,
-  via [`notpeter/Vector-Playing-Cards`](https://github.com/notpeter/Vector-Playing-Cards)).
-  Regenerate the deck with `python3 tools/gen_deck.py` (see [`tools/`](tools/)).
-- **Craps** — rules cross-checked against [`skent259/crapssim`](https://github.com/skent259/crapssim) (MIT), correctness reference only.
-- **Bowling** — flick-to-bowl feel inspired by [`iliagrigorevdev/bowling`](https://github.com/iliagrigorevdev/bowling) (GPL-3.0), **gameplay reference only** — all code original.
-- **Basketball** — gravity-arc technique reference [`lamesjim/Canvas-Basketball-Game`](https://github.com/lamesjim/Canvas-Basketball-Game) (MIT); all code original.
-- **Roulette** — wheel order, colors, and the 2.70% house edge verified against public references; all code original.
-- **Ping Pong** — the classic *Curveball* concept as mechanics reference; spin/speed feel cross-checked against [`jakesgordon/javascript-pong`](https://github.com/jakesgordon/javascript-pong) (MIT). All code original.
+See COMPETITIVE-AUDIT.md, PLAYMINT-IMPLEMENTATION-NOTES.md and UX-AUDIO-AUDIT.md for research and priorities. Bowling’s 3D physics, match-3, and the other games’ redesigns remain later work. Audio sources and licensing are in assets/audio/CREDITS.html. All 97 protected artwork hashes must match.

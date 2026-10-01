@@ -8,10 +8,10 @@ self.addEventListener('fetch',event=>{
  const req=event.request,url=new URL(req.url);if(req.method!=='GET'||url.origin!==ROOT.origin||!url.pathname.startsWith(ROOT.pathname))return;
  event.respondWith((async()=>{
   const cache=await caches.open(CACHE);
-  if(req.headers.has('range')){const saved=await cache.match(url.href);if(saved){const b=await saved.arrayBuffer();const match=/bytes=(\d*)-(\d*)/.exec(req.headers.get('range'));if(match){let start=match[1]?Number(match[1]):Math.max(0,b.byteLength-Number(match[2]));let end=match[1]&&match[2]?Math.min(Number(match[2]),b.byteLength-1):b.byteLength-1;if(start>end||start>=b.byteLength)return new Response(null,{status:416,headers:{'Content-Range':'bytes */'+b.byteLength}});return new Response(b.slice(start,end+1),{status:206,headers:{'Content-Type':saved.headers.get('Content-Type')||'audio/mpeg','Content-Range':'bytes '+start+'-'+end+'/'+b.byteLength,'Content-Length':String(end-start+1),'Accept-Ranges':'bytes'}});}}}
+  if(req.headers.has('range')){const saved=await cache.match(url.href,{ignoreVary:true});if(saved){const b=await saved.arrayBuffer();const match=/bytes=(\d*)-(\d*)/.exec(req.headers.get('range'));if(match){let start=match[1]?Number(match[1]):Math.max(0,b.byteLength-Number(match[2]));let end=match[1]&&match[2]?Math.min(Number(match[2]),b.byteLength-1):b.byteLength-1;if(start>end||start>=b.byteLength)return new Response(null,{status:416,headers:{'Content-Range':'bytes */'+b.byteLength}});return new Response(b.slice(start,end+1),{status:206,headers:{'Content-Type':saved.headers.get('Content-Type')||'audio/mpeg','Content-Range':'bytes '+start+'-'+end+'/'+b.byteLength,'Content-Length':String(end-start+1),'Accept-Ranges':'bytes'}});}}}
   const code=req.mode==='navigate'||/\.(js|css|html|webmanifest)$/.test(url.pathname);
-  if(code){try{const response=await fetch(req);if(response.ok)await cache.put(req,response.clone());return response;}catch{return await cache.match(req)||Response.error();}}
-  const saved=await cache.match(req);if(saved)return saved;
+  if(code){try{const response=await fetch(req);if(response.ok)await cache.put(req,response.clone());return response;}catch{return await cache.match(req,{ignoreVary:true})||Response.error();}}
+  const saved=await cache.match(req,{ignoreVary:true});if(saved)return saved;
   const response=await fetch(req);if(response.ok)await cache.put(req,response.clone());return response;
  })());
 });

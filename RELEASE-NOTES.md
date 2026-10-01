@@ -13,3 +13,7 @@ The original card graphics remain byte-for-byte intact. Solitaire and Friends no
 Validation: headless Edge on portrait/landscape and touch-enabled phone dimensions; guided hints/undo, stock recycling, exact save/resume, charge persistence, victory/scoring duplicate prevention, actual pointer drag, 52-card conservation, offline reload/images/audio decoding. All 97 protected art hashes match. Actual phone installation, hardware vibration, and a complete human accessibility evaluation still need on-device review.
 
 Sources, criteria, and limitations: ACCESSIBILITY-AND-UX.md. Audio provenance: assets/audio/CREDITS.html and candidates/README.md. Production clips are reproducible using tools/prepare_audio.py.
+
+## React game-shell update
+
+React/Vite replaces the page shell with an animated title and compact glyph controls. Score/best sit above the table; fresh deal is a visible Shuffle action with an in-game sheet. Opening and subsequent deals cascade from the stock with card contacts; saved games restore without redealing. Menu open/close mallet cues, reversed card audio, victory particles/card cascade, and one-use Surprise rescue are added. Painter is removed from the picker. Offline matching handles same-origin bundled cross-origin-mode requests; automatic updates preserve checkpoints. New browser verification covers actual audio output, cascade motion, touch drag, closure, offline navigation and service-worker upgrades. Android hardware/haptics and subjective audio preference still require Arline’s device review.

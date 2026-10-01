@@ -1,0 +1,18 @@
+import {readFile,writeFile,cp,readdir,mkdir} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+const out=new URL('../dist/',import.meta.url),root=new URL('../',import.meta.url);
+const entries=['index.html','games/solitaire/index.html','games/solitaire/statistics.html'];
+const built=new Map(await Promise.all(entries.map(async name=>[name,await readFile(new URL(name,out),'utf8')])));
+const bundles=(await readdir(new URL('assets/',out))).map(name=>'assets/'+name);
+for(const directory of ['assets','styles','games'])await cp(new URL(directory+'/',root),new URL(directory+'/',out),{recursive:true});
+for(const name of ['manifest.webmanifest'])await cp(new URL(name,root),new URL(name,out));
+for(const [name,html]of built)await writeFile(new URL(name,out),html.replace(/(<link[^>]*rel="manifest"[^>]*href=")[^"]+/, '$1/Solitaire-And-Friends/manifest.webmanifest'));
+const source=await readFile(new URL('sw.js',root),'utf8');
+const previous=JSON.parse(source.match(/const FILES=(\[[^;]+\]);/)[1]);
+const files=[...new Set([...previous.filter(name=>!name.includes('/fonts/')),...bundles])];
+const hash=createHash('sha256');
+for(const name of files){hash.update(name);hash.update(await readFile(new URL(name.endsWith('/')||name==='./'?name+'index.html':name,out)));}
+const version='solitaire-friends-react-'+hash.digest('hex').slice(0,12);
+await writeFile(new URL('sw.js',out),source.replace(/const CACHE='[^']+';/,"const CACHE='"+version+"';").replace(/const FILES=\[[^;]+\];/,'const FILES='+JSON.stringify(files)+';'));
+await writeFile(new URL('release.json',out),JSON.stringify({version,framework:'React + Vite',offlineFiles:files.length},null,2));
+console.log('PWA build:',version,files.length,'offline files; original art copied unchanged.');

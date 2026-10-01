@@ -1,156 +1,77 @@
 import {preferences,setPreference} from './preferences.js';
-/* ============================================================================
-   Arline Arcade — shared chiptune SFX engine
-   Procedural Web Audio (no sound files). Recipe house-style: a tone() synth
-   (osc + gain envelope + pitch glide) and a noise() generator (buffer -> filter),
-   the same approach as MansfieldTeachesTyping's audio.js.
-   Mobile-safe: the AudioContext is created lazily and resumed on first gesture.
-   ========================================================================== */
-
-let ctx = null;
-let muted = !preferences.effects;
-window.addEventListener('game-settings',()=>{muted=!preferences.effects;});
-
+// Recorded card and interface cues. Each requested cue waits for its own decode;
+// concurrent flip/place cues never suppress one another.
+let ctx,master,compressor;const buffers=new Map(),bytes=new Map(),decoding=new Map(),voices=new Set();
+const names=['deal-1.wav','deal-2.wav','deal-3.wav','shuffle.wav','tap.ogg','reward.ogg','tada.ogg'];
 function ac(){
-  if(!ctx){
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if(!AC) return null;
-    ctx = new AC();
-  }
-  return ctx;
+ if(!ctx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;
+ ctx=new AC();master=ctx.createGain();master.gain.value=.9;
+ compressor=ctx.createDynamicsCompressor();compressor.threshold.value=-8;compressor.knee.value=8;compressor.ratio.value=5;compressor.attack.value=.003;compressor.release.value=.18;
+ master.connect(compressor);compressor.connect(ctx.destination);}
+ return ctx;
 }
-
-/** Robustly unlock audio. iOS won't start a context from resume() alone — it
-    needs a (silent) buffer played *inside* a real user gesture. We also attach
-    global one-time gesture listeners so the very first tap anywhere unlocks. */
-let _unlocked = false;
-function primeUnlock(){
-  const c = ac(); if(!c) return;
-  if(c.state === 'suspended') c.resume();
-  if(_unlocked) return;
-  try{
-    const b = c.createBuffer(1, 1, 22050);
-    const s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); s.start(0);
-    _unlocked = true;
-  }catch(_){}
+function getBytes(name){
+ if(!bytes.has(name))bytes.set(name,fetch(new URL('../audio/'+name,import.meta.url)).then(r=>{if(!r.ok)throw Error('Audio '+r.status);return r.arrayBuffer();}).catch(e=>{bytes.delete(name);throw e;}));
+ return bytes.get(name);
 }
-export function unlock(){ primeUnlock(); }
-const _UNLOCK_EVENTS = ['pointerdown','touchend','mousedown','keydown'];
-function _onGesture(){ primeUnlock(); if(_unlocked) _UNLOCK_EVENTS.forEach(ev=>removeEventListener(ev,_onGesture)); }
-if(typeof window !== 'undefined') _UNLOCK_EVENTS.forEach(ev=>addEventListener(ev,_onGesture,{passive:true}));
-export function context(){ return ac(); }   // shared AudioContext (used by music.js)
-export function toggleMute(){ setPreference('effects',muted); return muted; }
-export function isMuted(){ return muted; }
-export function setMuted(v){ setPreference('effects',!v); }
-
-/* --- primitives ----------------------------------------------------------- */
-function tone({type='square', from, to, t0=0, dur=0.1, gain=0.1, glide='exp'}){
-  const c = ac(); if(!c || muted) return;
-  const now = c.currentTime + t0;
-  const o = c.createOscillator(), g = c.createGain();
-  o.type = type;
-  o.frequency.setValueAtTime(from, now);
-  if(to != null){
-    if(glide === 'exp') o.frequency.exponentialRampToValueAtTime(Math.max(1,to), now + dur);
-    else o.frequency.linearRampToValueAtTime(to, now + dur);
-  }
-  g.gain.setValueAtTime(gain * preferences.effectsVolume, now);
-  g.gain.exponentialRampToValueAtTime(0.0008, now + dur);
-  o.connect(g); g.connect(c.destination);
-  o.start(now); o.stop(now + dur + 0.02);
+names.forEach(name=>getBytes(name).catch(()=>{}));
+export function unlock(){
+ const c=ac();if(!c)return Promise.resolve();
+ // Resume inside the user's gesture, before any asynchronous decoding.
+ const resume=c.state==='running'?Promise.resolve():c.resume();
+ const source=c.createBufferSource();source.buffer=c.createBuffer(1,1,c.sampleRate);source.connect(master);source.start();source.onended=()=>source.disconnect();
+ return resume.catch(()=>{});
 }
-
-function noise({t0=0, dur=0.1, gain=0.1, filter='bandpass', f0=1800, f1, q=0.8}){
-  const c = ac(); if(!c || muted) return;
-  const now = c.currentTime + t0;
-  const n = Math.floor(c.sampleRate * dur);
-  const buf = c.createBuffer(1, n, c.sampleRate);
-  const d = buf.getChannelData(0);
-  for(let i=0;i<n;i++) d[i] = Math.random()*2 - 1;
-  const src = c.createBufferSource(); src.buffer = buf;
-  const flt = c.createBiquadFilter(); flt.type = filter; flt.Q.value = q;
-  flt.frequency.setValueAtTime(f0, now);
-  if(f1 != null) flt.frequency.exponentialRampToValueAtTime(f1, now + dur);
-  const g = c.createGain();
-  g.gain.setValueAtTime(gain * preferences.effectsVolume, now);
-  g.gain.exponentialRampToValueAtTime(0.0008, now + dur);
-  src.connect(flt); flt.connect(g); g.connect(c.destination);
-  src.start(now); src.stop(now + dur + 0.02);
+export function context(){return ac();}
+async function decode(name){
+ if(buffers.has(name))return buffers.get(name);
+ if(!decoding.has(name))decoding.set(name,getBytes(name).then(data=>ac().decodeAudioData(data.slice(0))).then(b=>{buffers.set(name,b);return b;}).finally(()=>decoding.delete(name)));
+ return decoding.get(name);
 }
-
-/** A soft "shhh" — filtered-noise swoosh with a smooth attack so it slides instead of clicking. */
-function shh({t0=0, dur=0.22, gain=0.05, f0=900, f1=4200}){
-  const c = ac(); if(!c || muted) return;
-  const now = c.currentTime + t0;
-  const n = Math.floor(c.sampleRate * dur);
-  const buf = c.createBuffer(1, n, c.sampleRate);
-  const d = buf.getChannelData(0);
-  for(let i=0;i<n;i++) d[i] = Math.random()*2 - 1;
-  const src = c.createBufferSource(); src.buffer = buf;
-  const flt = c.createBiquadFilter(); flt.type = 'bandpass'; flt.Q.value = 0.55;
-  flt.frequency.setValueAtTime(f0, now);
-  flt.frequency.linearRampToValueAtTime(f1, now + dur);
-  const g = c.createGain();
-  g.gain.setValueAtTime(0.0001, now);
-  g.gain.linearRampToValueAtTime(gain * preferences.effectsVolume, now + dur*0.32);   // soft attack
-  g.gain.exponentialRampToValueAtTime(0.0008, now + dur);
-  src.connect(flt); flt.connect(g); g.connect(c.destination);
-  src.start(now); src.stop(now + dur + 0.02);
+export async function ready(){const c=ac();if(!c)return;await Promise.all(names.map(decode));}
+export function isMuted(){return !preferences.effects;}
+export function setMuted(value){setPreference('effects',!value);}
+export function toggleMute(){setMuted(!isMuted());return isMuted();}
+async function play(name,{volume=1,rate=1,delay=0}={}){
+ if(isMuted()||document.hidden||!ac())return;
+ const started=performance.now();const resumed=unlock();
+ try{const b=await decode(name);await resumed;
+ if(isMuted()||document.hidden||performance.now()-started>5000)return;
+ if(voices.size>=8){const oldest=voices.values().next().value;oldest.stop();}
+ const c=ac(),source=c.createBufferSource(),gain=c.createGain();source.buffer=b;source.playbackRate.value=rate;
+ gain.gain.value=Math.min(1,preferences.effectsVolume)*volume;
+ source.connect(gain);gain.connect(master);voices.add(source);
+ source.onended=()=>{voices.delete(source);source.disconnect();gain.disconnect();};
+ source.start(c.currentTime+delay);
+ dispatchEvent(new CustomEvent('game-audio-cue',{detail:{name}}));
+ }catch(e){dispatchEvent(new CustomEvent('game-audio-error',{detail:e.message}));}
 }
-
-
-// Recorded cues are predecoded after the first gesture. Synthesis remains a fallback.
-const buffers=new Map();let loading=false,active=0,lastClip=-1;
-const clips=['deal-1.wav','deal-2.wav','deal-3.wav','shuffle.wav','tap.ogg','reward.ogg','tada.ogg'];
-async function loadClips(){
-  if(loading)return;loading=true;const c=ac();if(!c)return;
-  await Promise.all(clips.map(async name=>{try{const r=await fetch(new URL('../audio/'+name,import.meta.url));if(r.ok)buffers.set(name,await c.decodeAudioData(await r.arrayBuffer()));}catch{}}));
+let variant=0;
+export const deal=()=>play('deal-'+(variant++%3+1)+'.wav');
+export const flip=()=>play('deal-3.wav',{volume:.8,rate:1.07});
+export const pickup=()=>play('deal-1.wav',{volume:.6,rate:1.1});
+export const place=()=>play('deal-2.wav',{rate:.97+Math.random()*.06});
+export const foundation=()=>{place();return play('reward.ogg',{volume:.65,delay:.08});};
+export const invalid=()=>play('tap.ogg',{volume:.3,rate:.8});
+export const shuffle=()=>play('shuffle.wav');
+export const win=()=>{dispatchEvent(new CustomEvent('game-music-duck',{detail:1400}));return play('tada.ogg');};
+export async function mallet(kind='tap'){
+ if(isMuted()||!ac())return;await unlock();const c=ac();
+ const phrases={tap:[880],open:[659,880],close:[880,659],hint:[1047,1319],reverse:[1319,1047,784]};
+ const notes=phrases[kind]||phrases.tap;
+ notes.forEach((f,i)=>{for(const [harmonic,level] of [[1,.13],[2.76,.025],[5.4,.009]]){
+ const o=c.createOscillator(),g=c.createGain(),t=c.currentTime+i*.055;o.type='sine';o.frequency.value=f*harmonic;
+ g.gain.setValueAtTime(.00001,t);g.gain.exponentialRampToValueAtTime(level*preferences.effectsVolume+.00001,t+.004);g.gain.exponentialRampToValueAtTime(.00001,t+.28);
+ o.connect(g);g.connect(master);o.start(t);o.stop(t+.3);o.onended=()=>{o.disconnect();g.disconnect();};
+ }});
+ dispatchEvent(new CustomEvent('game-audio-cue',{detail:{name:'mallet-'+kind}}));
 }
-loadClips();
-addEventListener('pointerdown',loadClips,{once:true});addEventListener('keydown',loadClips,{once:true});
-function recorded(name){
-  if(muted || document.hidden)return true;
-  primeUnlock();const c=ac(),b=buffers.get(name);if(!c||!b){loadClips();return true;}
-  if(active>=4||c.currentTime-lastClip<.045)return true;
-  lastClip=c.currentTime;active++;const source=c.createBufferSource(),gain=c.createGain();source.buffer=b;
-  gain.gain.value=preferences.effectsVolume;source.connect(gain);gain.connect(c.destination);
-  source.onended=()=>{active--;source.disconnect();gain.disconnect();};source.start();return true;
+export async function undo(reverse=false){
+ if(isMuted())return;unlock();const source=await decode('deal-2.wav');
+ if(!buffers.has('card-return')){const b=ac().createBuffer(source.numberOfChannels,source.length,source.sampleRate);
+ for(let channel=0;channel<source.numberOfChannels;channel++){const from=source.getChannelData(channel),to=b.getChannelData(channel);for(let i=0;i<source.length;i++)to[i]=from[source.length-1-i];}buffers.set('card-return',b);}
+ play('card-return',{rate:reverse?.85:1});
+ if(reverse)mallet('reverse');
 }
-
-/* --- card-game voices ----------------------------------------------------- */
-export const deal      = () => { if(recorded('deal-'+(1+Math.floor(Math.random()*3))+'.wav'))return; shh({dur:0.12, gain:0.035, f0:1600, f1:3000}); tone({type:'square', from:680, to:520, dur:0.05, gain:0.045}); };
-export const flip      = () => { if(recorded('tap.ogg'))return; tone({type:'square', from:430, to:880, dur:0.06, gain:0.07}); };
-export const pickup = () => { recorded('deal-1.wav'); };
-export const place     = () => { if(recorded('deal-2.wav'))return; tone({type:'square', from:520, to:700, dur:0.07, gain:0.07}); };
-export const foundation= () => { if(recorded('reward.ogg'))return; tone({type:'sine', from:760, to:1280, dur:0.14, gain:0.09}); tone({type:'square', from:1180, t0:0.05, dur:0.1, gain:0.04}); };
-export const invalid = () => {};
-
-/** Riffle shuffle — a burst of short filtered-noise ticks, then a soft settle. */
-export function shuffle(){
-  if(recorded('shuffle.wav'))return;
-  const c = ac(); if(!c || muted) return;
-  // two soft "shhh" swooshes (the card-slide) ...
-  shh({t0:0.0,  dur:0.28, gain:0.05,  f0:700,  f1:3400});
-  shh({t0:0.24, dur:0.26, gain:0.045, f0:1100, f1:4200});
-  // ... with the crisp riffle ticks layered on top
-  let t = 0;
-  const ticks = 16;
-  for(let i=0;i<ticks;i++){
-    t += 0.018 + Math.random()*0.016;
-    noise({t0:t, dur:0.03, gain:0.035 + Math.random()*0.02, filter:'bandpass', f0:1500 + Math.random()*1800, q:1.4});
-  }
-  // two soft thumps as the deck squares up
-  tone({type:'triangle', from:160, to:90, t0:t+0.04, dur:0.12, gain:0.08});
-  tone({type:'triangle', from:150, to:80, t0:t+0.16, dur:0.12, gain:0.07});
-}
-
-/** Triumphant little arpeggio. */
-export function win(){
-  if(recorded('tada.ogg'))return;
-  const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5]; // C5 E5 G5 C6 E6
-  let t = 0;
-  notes.forEach((f,i)=>{ tone({type:'triangle', from:f, dur:i===4?0.32:0.12, gain:0.09, t0:t}); t += (i===4?0.32:0.12) + 0.02; });
-  notes.forEach((f,i)=>{ tone({type:'square', from:f*2, dur:0.08, gain:0.03, t0:i*0.14}); });
-}
-
-export default { unlock, context, toggleMute, isMuted, setMuted, deal, flip, pickup, place, foundation, invalid, shuffle, win };
+export const tap=()=>mallet('tap');
+export default {unlock,context,ready,toggleMute,isMuted,setMuted,deal,flip,pickup,place,foundation,invalid,shuffle,win,tap,undo,mallet};
