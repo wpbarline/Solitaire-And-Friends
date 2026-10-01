@@ -1,3 +1,4 @@
+import {preferences,setPreference} from './preferences.js';
 /* ============================================================================
    Arline Arcade — shared chiptune SFX engine
    Procedural Web Audio (no sound files). Recipe house-style: a tone() synth
@@ -7,7 +8,8 @@
    ========================================================================== */
 
 let ctx = null;
-let muted = false;
+let muted = !preferences.effects;
+window.addEventListener('game-settings',()=>{muted=!preferences.effects;});
 
 function ac(){
   if(!ctx){
@@ -37,9 +39,9 @@ const _UNLOCK_EVENTS = ['pointerdown','touchend','mousedown','keydown'];
 function _onGesture(){ primeUnlock(); if(_unlocked) _UNLOCK_EVENTS.forEach(ev=>removeEventListener(ev,_onGesture)); }
 if(typeof window !== 'undefined') _UNLOCK_EVENTS.forEach(ev=>addEventListener(ev,_onGesture,{passive:true}));
 export function context(){ return ac(); }   // shared AudioContext (used by music.js)
-export function toggleMute(){ muted = !muted; return muted; }
+export function toggleMute(){ setPreference('effects',muted); return muted; }
 export function isMuted(){ return muted; }
-export function setMuted(v){ muted = !!v; }
+export function setMuted(v){ setPreference('effects',!v); }
 
 /* --- primitives ----------------------------------------------------------- */
 function tone({type='square', from, to, t0=0, dur=0.1, gain=0.1, glide='exp'}){
@@ -52,7 +54,7 @@ function tone({type='square', from, to, t0=0, dur=0.1, gain=0.1, glide='exp'}){
     if(glide === 'exp') o.frequency.exponentialRampToValueAtTime(Math.max(1,to), now + dur);
     else o.frequency.linearRampToValueAtTime(to, now + dur);
   }
-  g.gain.setValueAtTime(gain, now);
+  g.gain.setValueAtTime(gain * preferences.effectsVolume, now);
   g.gain.exponentialRampToValueAtTime(0.0008, now + dur);
   o.connect(g); g.connect(c.destination);
   o.start(now); o.stop(now + dur + 0.02);
@@ -70,7 +72,7 @@ function noise({t0=0, dur=0.1, gain=0.1, filter='bandpass', f0=1800, f1, q=0.8})
   flt.frequency.setValueAtTime(f0, now);
   if(f1 != null) flt.frequency.exponentialRampToValueAtTime(f1, now + dur);
   const g = c.createGain();
-  g.gain.setValueAtTime(gain, now);
+  g.gain.setValueAtTime(gain * preferences.effectsVolume, now);
   g.gain.exponentialRampToValueAtTime(0.0008, now + dur);
   src.connect(flt); flt.connect(g); g.connect(c.destination);
   src.start(now); src.stop(now + dur + 0.02);
@@ -90,22 +92,41 @@ function shh({t0=0, dur=0.22, gain=0.05, f0=900, f1=4200}){
   flt.frequency.linearRampToValueAtTime(f1, now + dur);
   const g = c.createGain();
   g.gain.setValueAtTime(0.0001, now);
-  g.gain.linearRampToValueAtTime(gain, now + dur*0.32);   // soft attack
+  g.gain.linearRampToValueAtTime(gain * preferences.effectsVolume, now + dur*0.32);   // soft attack
   g.gain.exponentialRampToValueAtTime(0.0008, now + dur);
   src.connect(flt); flt.connect(g); g.connect(c.destination);
   src.start(now); src.stop(now + dur + 0.02);
 }
 
+
+// Recorded cues are predecoded after the first gesture. Synthesis remains a fallback.
+const buffers=new Map();let loading=false,active=0,lastClip=0;
+const clips=['deal-1.wav','deal-2.wav','deal-3.wav','shuffle.wav','tap.ogg','reward.ogg','tada.ogg'];
+async function loadClips(){
+  if(loading)return;loading=true;const c=ac();if(!c)return;
+  await Promise.all(clips.map(async name=>{try{const r=await fetch(new URL('../audio/'+name,import.meta.url));if(r.ok)buffers.set(name,await c.decodeAudioData(await r.arrayBuffer()));}catch{}}));
+}
+addEventListener('pointerdown',loadClips,{once:true});addEventListener('keydown',loadClips,{once:true});
+function recorded(name){
+  if(muted || document.hidden)return true;
+  const c=ac(),b=buffers.get(name);if(!c||!b){loadClips();return false;}
+  if(active>=4||c.currentTime-lastClip<.045)return true;
+  lastClip=c.currentTime;active++;const source=c.createBufferSource(),gain=c.createGain();source.buffer=b;
+  gain.gain.value=preferences.effectsVolume*.6;source.connect(gain);gain.connect(c.destination);
+  source.onended=()=>{active--;source.disconnect();gain.disconnect();};source.start();return true;
+}
+
 /* --- card-game voices ----------------------------------------------------- */
-export const deal      = () => { shh({dur:0.12, gain:0.035, f0:1600, f1:3000}); tone({type:'square', from:680, to:520, dur:0.05, gain:0.045}); };
-export const flip      = () => { tone({type:'square', from:430, to:880, dur:0.06, gain:0.07}); };
+export const deal      = () => { if(recorded('deal-'+(1+Math.floor(Math.random()*3))+'.wav'))return; shh({dur:0.12, gain:0.035, f0:1600, f1:3000}); tone({type:'square', from:680, to:520, dur:0.05, gain:0.045}); };
+export const flip      = () => { if(recorded('tap.ogg'))return; tone({type:'square', from:430, to:880, dur:0.06, gain:0.07}); };
 export const pickup    = () => { tone({type:'triangle', from:300, to:420, dur:0.05, gain:0.06}); };
-export const place     = () => { tone({type:'square', from:520, to:700, dur:0.07, gain:0.07}); };
-export const foundation= () => { tone({type:'sine', from:760, to:1280, dur:0.14, gain:0.09}); tone({type:'square', from:1180, t0:0.05, dur:0.1, gain:0.04}); };
+export const place     = () => { if(recorded('deal-2.wav'))return; tone({type:'square', from:520, to:700, dur:0.07, gain:0.07}); };
+export const foundation= () => { if(recorded('reward.ogg'))return; tone({type:'sine', from:760, to:1280, dur:0.14, gain:0.09}); tone({type:'square', from:1180, t0:0.05, dur:0.1, gain:0.04}); };
 export const invalid   = () => { tone({type:'sawtooth', from:180, to:110, dur:0.18, gain:0.09, glide:'lin'}); };
 
 /** Riffle shuffle — a burst of short filtered-noise ticks, then a soft settle. */
 export function shuffle(){
+  if(recorded('shuffle.wav'))return;
   const c = ac(); if(!c || muted) return;
   // two soft "shhh" swooshes (the card-slide) ...
   shh({t0:0.0,  dur:0.28, gain:0.05,  f0:700,  f1:3400});
@@ -124,6 +145,7 @@ export function shuffle(){
 
 /** Triumphant little arpeggio. */
 export function win(){
+  if(recorded('tada.ogg'))return;
   const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5]; // C5 E5 G5 C6 E6
   let t = 0;
   notes.forEach((f,i)=>{ tone({type:'triangle', from:f, dur:i===4?0.32:0.12, gain:0.09, t0:t}); t += (i===4?0.32:0.12) + 0.02; });

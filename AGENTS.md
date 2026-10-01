@@ -12,7 +12,7 @@ Baseline: `mansfieldplumbing/arlinearcade`, cloned October 1, 2026. This checkou
 
 ## Scope and approach
 
-- Scott requested the rebrand/title card and an implementation plan. Hints, unlimited undo, real card sounds, and feature parity are planned, not authorized as a rushed rewrite in the current pass.
+- Scott subsequently authorized implementing the Solitaire improvements and publishing the game on GitHub.io. Preserve the cards; finish Solitaire before implementing match-3. Use the owned wpbarline/Solitaire-And-Friends repository, not the original upstream.
 - Follow `IMPLEMENTATION-PLAN.md`. Audit the real game engine and existing simulations before changing rules. Do not treat a heuristic hint as proof that a deal is winnable.
 - Keep the vanilla HTML/CSS/JavaScript structure unless there is a concrete need for a change. Keep mobile and this slow Windows laptop usable.
 - License every recorded sound individually. Prefer CC0/public-domain card recordings; store exact source, author, license, retrieval date, and hash. Do not copy audio or graphics from Google Play competitors.

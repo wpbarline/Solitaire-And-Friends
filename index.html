@@ -9,29 +9,34 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="styles/app.css">
+<link rel="stylesheet" href="assets/css/game-comfort.css">
+<link rel="stylesheet" href="styles/welcome.css">
 </head>
 <body>
 
-<div id="intro" aria-hidden="true">
+<div id="intro" aria-hidden="true" hidden>
   <canvas id="introgl"></canvas>
   <img id="introLogo" src="assets/solitaire-and-friends-logo.png" alt="Solitaire and Friends" decoding="async">
   <button id="introSkip" type="button">Tap to enter &rsaquo;</button>
 </div>
 
-<main class="wrap">
+<a class="skip-link" href="#main">Skip to games</a>
+<main class="wrap" id="main">
 
   <header class="site-header">
     <img class="logo-img" src="assets/solitaire-and-friends-logo.png" alt="Solitaire and Friends" width="1697" height="927">
     <p class="tagline">Ad-free &middot; No sign-ups &middot; Just games</p>
   </header>
 
-  <section class="grid" aria-label="Games">
+  <section class="welcome-play"><p class="eyebrow">A little time for yourself</p><h1>Good cards. Good company.</h1><p>Your familiar deck, a gentle nudge when you need it, and a celebration when you win.</p><div class="welcome-actions"><a class="primary-play" href="games/solitaire/">Play Solitaire</a><a href="games/solitaire/statistics.html">Your statistics</a><button data-audio-settings type="button">Sound settings</button><button data-share-game type="button">Share game</button><button id="installGame" type="button">Install on your phone</button></div><p id="shareStatus" role="status"></p><p id="installStatus" role="status"></p></section>
+<h2 class="games-heading">Pick a little fun</h2>
+<section class="grid" aria-label="Games">
 
     <a class="tile" href="games/solitaire/" style="--i:0">
       <span class="suit">&#9824;</span>
       <span class="idx">01</span>
       <h2>Solitaire</h2>
-      <p>The classic Klondike &mdash; now with three magic rewinds and one lucky shuffle per game.</p>
+      <p>Classic cards, helpful hints, unlimited undo, and a game that remembers where you left off.</p>
       <span class="go">Play</span>
     </a>
 
@@ -121,8 +126,11 @@
 
 </main>
 
-<script type="module" src="assets/js/intro.js"></script>
+<script type="module" src="assets/js/share.js"></script>
+<script type="module" src="assets/js/install.js"></script>
+<script type="module" src="assets/js/settings.js"></script>
 <script type="module" src="assets/js/music.js"></script>
 <script type="module" src="assets/js/sw-register.js"></script>
+<nav class="phone-nav" aria-label="App navigation"><a href="">Games</a><a href="games/solitaire/">Play</a><a href="games/solitaire/statistics.html">Scores</a><button data-audio-settings type="button">Settings</button></nav>
 </body>
 </html>

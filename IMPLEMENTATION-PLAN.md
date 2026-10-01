@@ -111,3 +111,7 @@ Entry gate: Solitaire hints/undo, audio settings, save/resume, phone interaction
 First playable version: an 8-by-8 board, adjacent swaps, invalid-swap reversal, runs of three or more, simultaneous match clearing, gravity/refill/cascades, deterministic seeds, and dead-board detection with a fair reshuffle. Initial boards must have a legal move and no accidental starting matches. Add clear move-limited goals, simple levels, saved progress, and celebratory sounds. Test intersecting matches, cascade termination, input locking during resolution, and resume determinism. Introduce special tiles only after the basic loop is stable.
 
 Release sequence: approved rebrand and asset preservation → sound/music settings → Solitaire engine checks and hints/undo → save/resume and draw-three → optional daily goals → shared primitives adopted by Uno/Rummy → match-3. Full gameplay implementation is deferred to the next work phase.
+
+## Release status — October 1, 2026
+
+The first phone-first Solitaire implementation is complete. See RELEASE-NOTES.md for delivered features, validation, and remaining on-device review. The architecture remains incremental; match-3 and deeper Uno/Rummy rule changes are deferred.

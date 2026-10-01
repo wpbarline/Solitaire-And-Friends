@@ -34,6 +34,21 @@
 .moves{ font-family:var(--mono); font-size:.78rem; color:var(--paper); opacity:.85; margin-left:.3rem }
 
 /* ---- board ---- */
+.sol-bar .btn{min-height:44px;font-family:system-ui;font-size:.9rem}
+.sol-bar .candy{background:linear-gradient(#ffb9da,#dc538e);color:#3d1633;box-shadow:0 4px 0 #873761,0 7px 14px #0005}
+.sol-summary{max-width:880px;margin:12px auto 0;display:flex;justify-content:center;flex-wrap:wrap;gap:16px;color:#ffe5a2;font:14px/1.4 system-ui}
+.hint-text{min-height:44px;text-align:center;max-width:850px;margin:6px auto;padding:8px 14px;color:#fff0bf;font:16px/1.4 system-ui}
+.draw-label{color:#fff0bf;font:14px system-ui}.draw-label select{padding:9px;border-radius:12px;background:#254c44;color:#fff0bf;border:1px solid #e9c34a55}
+.hinted{outline:4px solid #ffdc69!important;outline-offset:2px;box-shadow:0 0 22px #ffd768!important}
+.more-controls{max-width:880px;width:calc(100% - 24px);margin:8px auto;border-radius:16px;background:#143c32;color:#fff0bf;padding:8px 14px;font:15px/1.5 system-ui}
+.more-controls summary{min-height:36px;padding:7px 0;cursor:pointer}.more-content{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding-top:8px}.more-controls p{margin:8px 0}
+.topbar{flex-wrap:wrap;gap:10px}.topbar a{padding:10px;min-height:44px;font:16px system-ui}
+.sol-bar{padding-top:8px}.sol-summary{font-size:15px}.sol-load-text{font-family:system-ui}
+.guided-move{display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;margin:0 12px 8px;color:#f8e5b8;font:14px/1.4 system-ui}.guided-move button{min-height:44px}.guided-move button[hidden]{display:none}
+.card.dragging{filter:brightness(1.04);box-shadow:0 14px 22px #0008,0 3px 5px #0004;cursor:grabbing}
+.card:active{cursor:grabbing}
+.board.time-reversing .card{transition:transform .32s cubic-bezier(.4,0,.2,1),box-shadow .32s;filter:sepia(.1)}
+@media(orientation:landscape) and (max-height:600px){.topbar{padding:4px 10px}.sol-bar{padding-top:2px}.sol-summary{margin-top:6px}.hint-text{margin:0;min-height:36px;padding:4px 12px}.more-controls{margin:4px auto}.board{max-width:760px}.sol-load-logo{max-height:140px;width:auto}}
 .board{ position:relative; width:100%; max-width:900px; margin:0 auto; min-height:62vh }
 .slot{
   position:absolute; left:0; top:0; width:var(--cw,64px); height:var(--ch, calc(var(--cw,64px) * 1.5));

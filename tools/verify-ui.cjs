@@ -1,0 +1,93 @@
+// Silent Edge checks; no visible browser is opened.
+const {chromium}=require('C:/Users/Arline/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+(async()=>{
+ const browser=await chromium.launch({channel:'msedge',headless:true});
+ try{
+  const context=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
+  const page=await context.newPage();const errors=[];
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('http://127.0.0.1:8770/games/solitaire/');
+  await page.waitForFunction(()=>window.__sol?.state);
+  await page.waitForSelector('#solLoad.gone',{state:'attached'}).catch(()=>{});
+  assert.equal(await page.locator('.card').count(),52);
+  const initial=await page.evaluate(()=>window.__sol.state);
+  await page.locator('#hintBtn').click();
+  assert.ok((await page.locator('#hintText').textContent()).length>10);
+  assert.ok(await page.locator('.hinted').count());
+  await page.locator('#playHint').click();
+  assert.equal(await page.evaluate(()=>window.__sol.moves),1);
+  await page.locator('#rewindBtn').click();
+  assert.deepEqual(await page.evaluate(()=>window.__sol.state),initial);
+  // Draw-three, recycle, undo, and resume preserve all cards and exact order.
+  await page.locator('summary').click();
+  await page.locator('#drawMode').selectOption('3');
+  await page.locator('.slot.stock').press('Enter');
+  assert.equal(await page.evaluate(()=>window.__sol.waste),3);
+  const saved=await page.evaluate(()=>window.__sol.state);
+  await page.reload();await page.waitForFunction(()=>window.__sol?.state);
+  assert.deepEqual(await page.evaluate(()=>window.__sol.state),saved);
+  assert.equal(await page.evaluate(()=>window.__sol.drawCount),3);
+  for(let i=0;i<7;i++)await page.locator('.slot.stock').press('Enter');
+  assert.equal(await page.evaluate(()=>window.__sol.stock),0);
+  assert.equal(await page.evaluate(()=>window.__sol.waste),24);
+  await page.locator('.slot.stock').press('Enter');
+  assert.equal(await page.evaluate(()=>window.__sol.stock),24);
+  await page.locator('#rewindBtn').click();
+  assert.equal(await page.evaluate(()=>window.__sol.waste),24);
+  // A Time Reverse charge retraces three snapshots and stays spent on reload.
+  const beforeReverse=await page.evaluate(()=>window.__sol.state);
+  for(let i=0;i<3;i++)await page.locator('.slot.stock').press('Enter');
+  await page.locator('summary').click();
+  await page.locator('#timeReverse').click();
+  await page.waitForFunction(()=>!document.querySelector('.time-reversing'));
+  assert.deepEqual(await page.evaluate(()=>window.__sol.state),beforeReverse);
+  assert.equal(await page.evaluate(()=>window.__sol.rewindsLeft),2);
+  await page.locator('[data-settings]').click();
+  await page.locator('[data-pref="effects"]').uncheck();
+  await page.locator('[data-pref="haptics"]').check();
+  await page.locator('[data-pref="music"]').check();
+  await page.locator('[data-pref="musicVolume"]').fill('0.15');
+  await page.locator('.ds-close').click();
+  await page.reload();await page.waitForFunction(()=>window.__sol?.state);
+  assert.equal(await page.evaluate(()=>window.__sol.rewindsLeft),2);
+  await page.locator('[data-settings]').click();
+  assert.equal(await page.locator('[data-pref="effects"]').isChecked(),false);
+  assert.equal(await page.locator('[data-pref="haptics"]').isChecked(),true);
+  assert.equal(await page.locator('[data-pref="music"]').isChecked(),true);
+  await page.locator('.ds-close').click();
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await page.screenshot({path:'C:/github-projects/Solitaire-And-Friends/tools/solitaire-portrait.png',fullPage:true});
+  await page.setViewportSize({width:844,height:390});
+  await page.waitForTimeout(200);
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await page.screenshot({path:'C:/github-projects/Solitaire-And-Friends/tools/solitaire-landscape.png',fullPage:true});
+  await page.goto('http://127.0.0.1:8770/games/solitaire/statistics.html');
+  assert.equal(await page.locator('.stat').count(),5);
+  // A legal almost-complete deal exercises victory, records, and duplicate protection.
+  await page.evaluate(()=>{
+   const foundations=Array.from({length:4},(_,s)=>Array.from({length:s===3?12:13},(_,r)=>({id:s*13+r,up:true})));
+   const state={stock:[],waste:[{id:51,up:true}],foundations,tableau:Array.from({length:7},()=>[]),moves:100};
+   localStorage.setItem('solitaire-friends-game-v1',JSON.stringify({version:1,seed:1,drawCount:1,elapsed:300,initial:state,state,history:[],shufflesLeft:1,rewindsLeft:3,dealKind:'Classic',winRecorded:false}));
+  });
+  await page.goto('http://127.0.0.1:8770/games/solitaire/');await page.waitForFunction(()=>window.__sol?.state);
+  await page.locator('.card[data-id="51"]').click();
+  assert.equal(await page.locator('#win').evaluate(e=>e.classList.contains('show')),true);
+  let records=await page.evaluate(()=>JSON.parse(localStorage.getItem('solitaire-friends-stats-v1')));
+  assert.equal(records.wins,1);assert.equal(records.highScores[0].moves,101);assert.ok(records.highScores[0].score>0);
+  await page.evaluate(()=>document.querySelector('#rewindBtn').click());
+  await page.locator('.card[data-id="51"]').click();
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('solitaire-friends-stats-v1')).wins),1);
+  await page.goto('http://127.0.0.1:8770/games/solitaire/statistics.html');
+  assert.equal(await page.locator('#scoreRows tr').count(),1);
+  await page.goto('http://127.0.0.1:8770/');
+  assert.equal(await page.locator('.primary-play').textContent(),'Play Solitaire');
+  await page.locator('.welcome-actions [data-audio-settings]').click();
+  assert.equal(await page.locator('#audio-dialog').isVisible(),true);
+  await page.locator('#closeAudio').click();
+  await page.screenshot({path:'C:/github-projects/Solitaire-And-Friends/tools/home-desktop.png',fullPage:true});
+  assert.deepEqual(errors,[]);
+  console.log('PASS: hint/play/undo, draw-three/recycle/resume, settings, portrait/landscape, stats, home.');
+ }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

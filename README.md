@@ -1,3 +1,13 @@
+# Solitaire and Friends — phone-first release
+
+Live: https://wpbarline.github.io/Solitaire-And-Friends/
+
+Solitaire now includes hints and guided moves, tap/drag, unlimited undo, three multi-move Time Reverse charges, Draw 1/3, save/resume, daily deals, statistics and local high scores, optional music/effects/haptics, sharing, and an offline installable PWA. Original card art is preserved. See RELEASE-NOTES.md and ACCESSIBILITY-AND-UX.md for tests and practical limits.
+
+Android: open the live site in Chrome/Edge and choose Install on your phone, or the browser menu → Install app/Add to Home screen. Stats and saves are local to each device; there is no cross-device account sync. Music defaults off.
+
+## Original project notes
+
 # Solitaire and Friends
 
 A cozy, **ad-free** game arcade — built for Arline, who loves Solitaire and Uno.

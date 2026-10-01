@@ -1,0 +1,6 @@
+tools/*-portrait.png
+tools/*-landscape.png
+tools/home-*.png
+__pycache__/
+*.pyc
+.DS_Store

@@ -7,10 +7,12 @@
 <title>Solitaire — Solitaire and Friends</title>
 <meta name="description" content="Klondike Solitaire — tap to play, smooth and ad-free.">
 <meta name="theme-color" content="#0b6b40">
+<link rel="manifest" href="../../manifest.webmanifest">
 <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="../../styles/app.css">
 <link rel="stylesheet" href="solitaire.css">
 <link rel="stylesheet" href="../../assets/css/deck-prefs.css">
+<link rel="stylesheet" href="../../assets/css/game-comfort.css">
 </head>
 <body>
 <div id="solLoad" class="sol-load" role="status" aria-label="Loading">
@@ -21,18 +23,29 @@
 <nav class="topbar">
   <a class="back" href="../../">&#8592; Games</a>
   <span class="crumb">Solitaire</span>
+  <a class="back" href="statistics.html">Statistics & scores</a>
 </nav>
 
 <div class="sol-bar">
   <button id="newGame" class="btn">New game</button>
-  <button id="autoBtn" class="btn ghost">Auto-finish</button>
-  <button id="rewindBtn" class="btn ghost pill" type="button" aria-label="Rewind last move, 3 left" disabled>&#10226; Rewind <span class="chip" id="rewindCount">x3</span></button>
-  <button id="shuffleBtn" class="btn ghost pill" type="button" aria-label="Magic shuffle the hidden cards, 1 left">&#10022; Shuffle <span class="chip" id="shuffleCount">x1</span></button>
-  <span class="moves" id="moves">0 moves</span>
-  <button class="btn ghost settings-gear" data-settings type="button" aria-label="Settings">&#9881;</button>
-</div>
 
-<div id="board" class="board"></div>
+  <button id="rewindBtn" class="btn ghost pill" type="button" aria-label="Undo last move" disabled>&#10226; Undo <span id="rewindCount"></span></button>
+  <button id="hintBtn" class="btn candy" type="button">&#10024; Hint</button>
+  <span class="moves" id="moves">0 moves</span>
+  <button class="btn ghost settings-gear" data-settings type="button" aria-label="Settings">Settings</button>
+</div>
+<details class="more-controls"><summary>More ways to play</summary><div class="more-content">  <button id="restartBtn" class="btn ghost" type="button">Restart deal</button>
+  <button id="dailyBtn" class="btn ghost" type="button">Daily deal</button>
+  <label class="draw-label">Draw <select id="drawMode" aria-label="Cards per draw"><option value="1">1 card</option><option value="3">3 cards</option></select></label>
+  <button id="shuffleBtn" class="btn ghost pill" type="button" aria-label="Magic shuffle the hidden cards, 1 left">&#10022; Shuffle <span class="chip" id="shuffleCount">x1</span></button>
+<button id="timeReverse" class="btn candy" type="button">Time Reverse <span id="reverseCount">3 left</span></button>
+<button data-share-game class="btn ghost" type="button">Share game</button>
+<button id="autoBtn" class="btn ghost">Auto-finish</button></div><p>Daily deals are shared by date. Magic shuffle changes hidden cards once per game. Time Reverse retraces up to three moves, with three charges per deal.</p></details>
+<div class="sol-summary"><span id="timer">0:00</span><span id="progress">0 / 52 home</span><span id="stats"></span></div>
+<p id="hintText" class="hint-text" role="status" aria-live="polite">Tap a card to move it, or use Hint.</p>
+<div class="guided-move"><button id="playHint" class="btn candy" type="button" hidden>Play this move</button><span>Tap to move · Drag to a pile · Hint, then Play this move</span></div>
+
+<div id="board" class="board" role="region" aria-label="Solitaire table"></div>
 
 <div id="win" class="win">
   <div class="panel">
@@ -40,6 +53,8 @@
     <h1>You win!</h1>
     <p>Cleared in <span id="winMoves">0</span> moves</p>
     <button id="winNew" class="btn">New game</button>
+    <button data-share-game="score" class="btn">Share my best score</button><p id="shareStatus" role="status"></p>
+<p><a href="statistics.html">See your scores</a></p>
   </div>
 </div>
 
@@ -47,7 +62,10 @@
 <script>setTimeout(function(){var l=document.getElementById('solLoad');if(l)l.classList.add('gone');},7000);</script>
 <script src="../../assets/js/deck-prefs.js"></script>
 <script type="module" src="../../assets/js/music.js"></script>
+<script type="module" src="../../assets/js/settings.js"></script>
+<script type="module" src="../../assets/js/share.js"></script>
 <script type="module" src="solitaire.js"></script>
 <script type="module" src="../../assets/js/sw-register.js"></script>
+<nav class="phone-nav" aria-label="App navigation"><a href="../../">Games</a><a href="../../games/solitaire/">Play</a><a href="../../games/solitaire/statistics.html">Scores</a><button data-audio-settings type="button">Settings</button></nav>
 </body>
 </html>

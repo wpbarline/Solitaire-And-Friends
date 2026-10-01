@@ -1,58 +1,17 @@
-/* Solitaire and Friends — service worker.
-   Self-updating: no manual cache-clearing, and no "re-download everything" on a deploy.
-
-   - App code (HTML/JS/CSS/manifest): NETWORK-FIRST → you always get the latest build
-     the next time a page loads, falling back to cache only when offline.
-   - Static art (cards, images, audio, fonts): STALE-WHILE-REVALIDATE under a STABLE
-     cache → served instantly from cache, then revalidated in the background with a
-     conditional request. Unchanged files come back 304 (a few bytes, nothing
-     re-downloaded); only files that actually changed transfer, and show on next load.
-
-   Because the cache name never changes, deploying never wipes the cache. Just edit and
-   deploy — clients pick up changed art on their next visit and changed code on their
-   next navigation. There is no VERSION to bump and no cache to clear by hand. */
-const CACHE = 'arline-3';          // bumped to evict the inline-SVG deck (now PNG faces)
-const FALLBACK = './index.html';
-
-self.addEventListener('install', () => { self.skipWaiting(); });
-
-self.addEventListener('activate', (e) => {
-  e.waitUntil((async () => {
-    // one-time cleanup of the old versioned caches (arline-v1 … arline-v4)
-    const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)));
-    await self.clients.claim();
-  })());
+// Solitaire and Friends: scoped offline cache, preserving other apps on this origin.
+const CACHE='solitaire-friends-v2';
+const ROOT=new URL('./',self.location.href);
+const FILES=["./","index.html","manifest.webmanifest","styles/app.css","styles/welcome.css","assets/css/game-comfort.css","assets/css/deck-prefs.css","assets/icon-192.png","assets/icon-512.png","assets/solitaire-and-friends-logo.png","assets/favicon.svg","games/solitaire/","games/solitaire/index.html","games/solitaire/solitaire.css","games/solitaire/solitaire.js","games/solitaire/abilities.js","games/solitaire/rules.js","games/solitaire/statistics.html","games/solitaire/statistics.js","assets/js/deck-faces.js","assets/js/deck-prefs.js","assets/js/game-primitives.js","assets/js/haptics.js","assets/js/install.js","assets/js/intro.js","assets/js/music.js","assets/js/preferences.js","assets/js/settings.js","assets/js/sfx.js","assets/js/share.js","assets/js/sw-register.js","assets/fonts/CascadiaCodeNF.ttf","assets/fonts/selawk.ttf","assets/audio/deal-1.wav","assets/audio/deal-2.wav","assets/audio/deal-3.wav","assets/audio/music.mp3","assets/audio/reward.ogg","assets/audio/shuffle.wav","assets/audio/tada.ogg","assets/audio/tap.ogg","assets/cards/royal/back-burgundy.jpg","assets/cards/royal/back-charcoal.jpg","assets/cards/royal/back-green.jpg","assets/cards/royal/back-purple.jpg","assets/cards/royal/back-red.jpg","assets/cards/royal/back.jpg","assets/cards/royal/club_1.png","assets/cards/royal/club_10.png","assets/cards/royal/club_11.png","assets/cards/royal/club_12.png","assets/cards/royal/club_13.png","assets/cards/royal/club_2.png","assets/cards/royal/club_3.png","assets/cards/royal/club_4.png","assets/cards/royal/club_5.png","assets/cards/royal/club_6.png","assets/cards/royal/club_7.png","assets/cards/royal/club_8.png","assets/cards/royal/club_9.png","assets/cards/royal/diamond_1.png","assets/cards/royal/diamond_10.png","assets/cards/royal/diamond_11.png","assets/cards/royal/diamond_12.png","assets/cards/royal/diamond_13.png","assets/cards/royal/diamond_2.png","assets/cards/royal/diamond_3.png","assets/cards/royal/diamond_4.png","assets/cards/royal/diamond_5.png","assets/cards/royal/diamond_6.png","assets/cards/royal/diamond_7.png","assets/cards/royal/diamond_8.png","assets/cards/royal/diamond_9.png","assets/cards/royal/heart_1.png","assets/cards/royal/heart_10.png","assets/cards/royal/heart_11.png","assets/cards/royal/heart_12.png","assets/cards/royal/heart_13.png","assets/cards/royal/heart_2.png","assets/cards/royal/heart_3.png","assets/cards/royal/heart_4.png","assets/cards/royal/heart_5.png","assets/cards/royal/heart_6.png","assets/cards/royal/heart_7.png","assets/cards/royal/heart_8.png","assets/cards/royal/heart_9.png","assets/cards/royal/spade_1.png","assets/cards/royal/spade_10.png","assets/cards/royal/spade_11.png","assets/cards/royal/spade_12.png","assets/cards/royal/spade_13.png","assets/cards/royal/spade_2.png","assets/cards/royal/spade_3.png","assets/cards/royal/spade_4.png","assets/cards/royal/spade_5.png","assets/cards/royal/spade_6.png","assets/cards/royal/spade_7.png","assets/cards/royal/spade_8.png","assets/cards/royal/spade_9.png","assets/audio/CREDITS.html"];
+self.addEventListener('install',event=>event.waitUntil((async()=>{const cache=await caches.open(CACHE);await cache.addAll(FILES.map(f=>new URL(f,ROOT).href));await self.skipWaiting();})()));
+self.addEventListener('activate',event=>event.waitUntil((async()=>{const names=await caches.keys();await Promise.all(names.filter(n=>n.startsWith('solitaire-friends-')&&n!==CACHE).map(n=>caches.delete(n)));await self.clients.claim();})()));
+self.addEventListener('fetch',event=>{
+ const req=event.request,url=new URL(req.url);if(req.method!=='GET'||url.origin!==ROOT.origin||!url.pathname.startsWith(ROOT.pathname))return;
+ event.respondWith((async()=>{
+  const cache=await caches.open(CACHE);
+  if(req.headers.has('range')){const saved=await cache.match(url.href);if(saved){const b=await saved.arrayBuffer();const match=/bytes=(\d*)-(\d*)/.exec(req.headers.get('range'));if(match){let start=match[1]?Number(match[1]):Math.max(0,b.byteLength-Number(match[2]));let end=match[1]&&match[2]?Math.min(Number(match[2]),b.byteLength-1):b.byteLength-1;if(start>end||start>=b.byteLength)return new Response(null,{status:416,headers:{'Content-Range':'bytes */'+b.byteLength}});return new Response(b.slice(start,end+1),{status:206,headers:{'Content-Type':saved.headers.get('Content-Type')||'audio/mpeg','Content-Range':'bytes '+start+'-'+end+'/'+b.byteLength,'Content-Length':String(end-start+1),'Accept-Ranges':'bytes'}});}}}
+  const code=req.mode==='navigate'||/\.(js|css|html|webmanifest)$/.test(url.pathname);
+  if(code){try{const response=await fetch(req);if(response.ok)await cache.put(req,response.clone());return response;}catch{return await cache.match(req)||Response.error();}}
+  const saved=await cache.match(req);if(saved)return saved;
+  const response=await fetch(req);if(response.ok)await cache.put(req,response.clone());return response;
+ })());
 });
-
-self.addEventListener('fetch', (e) => {
-  const req = e.request;
-  if (req.method !== 'GET') return;
-  let url;
-  try { url = new URL(req.url); } catch { return; }
-  if (url.origin !== self.location.origin) return;            // leave cross-origin alone
-  const appCode = req.mode === 'navigate' || /\.(?:js|css|webmanifest|html)$/.test(url.pathname);
-  e.respondWith(appCode ? networkFirst(req) : staleWhileRevalidate(req));
-});
-
-async function networkFirst(req) {
-  try {
-    const fresh = await fetch(req, { cache: 'reload' });       // bypass HTTP cache → newest build
-    (await caches.open(CACHE)).put(req, fresh.clone()).catch(() => {});
-    return fresh;
-  } catch {
-    const cached = await caches.match(req);
-    return cached || (req.mode === 'navigate' ? caches.match(FALLBACK) : Response.error());
-  }
-}
-
-// Serve cached art immediately; revalidate in the background with a conditional request.
-// Unchanged → 304 (no bytes re-downloaded); changed → 200, cache updated, shows next load.
-async function staleWhileRevalidate(req) {
-  const cache = await caches.open(CACHE);
-  const cached = await cache.match(req);
-  const revalidate = fetch(req, cached ? { cache: 'no-cache' } : {})
-    .then((res) => { if (res && res.ok) cache.put(req, res.clone()).catch(() => {}); return res; })
-    .catch(() => null);
-  return cached || (await revalidate) || Response.error();
-}

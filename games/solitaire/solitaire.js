@@ -1,3 +1,4 @@
+import {haptic} from '../../assets/js/haptics.js';
 /* ============================================================================
    Arline Arcade — Klondike Solitaire
    Tap-to-move (taps auto-route: foundation first, else a legal tableau). Cards
@@ -6,6 +7,9 @@
    ============================================================================ */
 import sfx from '../../assets/js/sfx.js';
 import { snapshot as abSnapshot, restore as abRestore, magicShuffle } from './abilities.js';
+import {hints, safeFoundation, validSnapshot} from './rules.js';
+import {seededRandom, shuffled, dailySeed} from '../../assets/js/game-primitives.js';
+import {preferences} from '../../assets/js/preferences.js';
 
 const SUITS = [{ch:'♠',color:'black'},{ch:'♥',color:'red'},{ch:'♦',color:'red'},{ch:'♣',color:'black'}];
 const RANKS = ['','A','2','3','4','5','6','7','8','9','10','J','Q','K'];
@@ -19,13 +23,72 @@ let history=[], rewindsLeft=3, shufflesLeft=1, cardsById=new Map();   // Arline'
 const posMap = new Map(); let geo=null, drag=null;
 
 const topOf = a => a[a.length-1];
+const SAVE_KEY='solitaire-friends-game-v1', STATS_KEY='solitaire-friends-stats-v1';
+let seed=0,drawCount=1,elapsed=0,initial=null,autoTimer=null,dealKind='Classic',winRecorded=false;
+let currentHint=null,hintIndex=0;
+let reversing=false;
+let stats={played:0,wins:0,bestMoves:null,bestTime:null,highScores:[]};
+try{stats={...stats,...JSON.parse(localStorage.getItem(STATS_KEY))};}catch{}
+function stopAuto(){clearInterval(autoTimer);autoTimer=null;}
+function snapshot(){return abSnapshot({stock,waste,foundations,tableau,moves});}
+function saveGame(){
+  if(!cards)return;
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify({version:1,seed,drawCount,elapsed,initial,dealKind,winRecorded,shufflesLeft,rewindsLeft,state:snapshot(),history}));}catch{ announce('Storage is full. This game may not resume after closing.'); }
+}
+function saveStats(){try{localStorage.setItem(STATS_KEY,JSON.stringify(stats));}catch{}}
+function applySnapshot(s){const restored=abRestore(s,cardsById);({stock,waste,foundations,tableau,moves}=restored);}
+function announce(text){const e=document.getElementById('hintText');if(e)e.textContent=text;}
+function clearHint(){board.querySelectorAll('.hinted').forEach(e=>e.classList.remove('hinted'));currentHint=null;document.getElementById('playHint')?.setAttribute('hidden','');}
+function hint(){
+  if(reversing)return;
+  stopAuto();const choices=hints({stock,waste,foundations,tableau});const wasHint=!!currentHint;clearHint();if(!wasHint)hintIndex=0;const option=choices[hintIndex++%choices.length];
+  if(!option){announce('No moves found among the visible cards. Try Undo or a new deal.');return;}
+  slotEl[option.to]?.classList.add('hinted');
+  if(option.kind==='stock'){(stock.length?elMap.get(topOf(stock).id):slotEl.stock).classList.add('hinted');announce(stock.length?'Tap the stock to draw '+drawCount+' card'+(drawCount===1?'':'s')+'.':'Tap the empty stock to turn the waste over.');}
+  else{const card=cardsById.get(option.card);elMap.get(card.id).classList.add('hinted');announce('Move '+RANKS[card.rank]+SUITS[card.suit].ch+' to '+(option.kind==='foundation'?'its foundation.':'column '+(Number(option.to[1])+1)+'.'));}
+  currentHint=option;document.getElementById('playHint').removeAttribute('hidden');
+}
+function playHint(){
+  const option=currentHint;if(!option)return;
+  if(option.kind==='stock'){drawStock();return;}
+  const card=cardsById.get(option.card),loc=locate(card);if(!loc)return;
+  if(option.kind==='foundation'&&foundationFor(card)>=0)doFoundation(card,loc);
+  else if(option.kind==='tableau'){
+    const run=loc.type==='tableau'?tableau[loc.col].slice(loc.idx):[card];
+    if(runValid(run)&&canTableau(card,Number(option.to[1])))doTableau(run,loc,Number(option.to[1]));
+  }
+}
+function newGame(kind='Classic'){
+  if(reversing)return;
+  if(cards&&moves>0&&!won&&!confirm('Start a new deal? Your current game will be replaced.')){document.getElementById('drawMode').value=drawCount;return;}
+  dealKind=kind;seed=kind==='Daily'?dailySeed():Math.floor(Math.random()*4294967296);
+  drawCount=Number(document.getElementById('drawMode')?.value)||1;
+  elapsed=0;winRecorded=false;deal();initial=snapshot();stats.played++;saveStats();saveGame();
+  announce(kind==='Daily'?"Today's shared deal. Winning is not guaranteed.":'A fresh deal. Have fun!');
+}
+function restart(){
+  if(!initial||reversing)return;if(moves>0&&!confirm('Restart these same cards from the beginning?'))return;stopAuto();clearHint();applySnapshot(initial);history=[];shufflesLeft=1;rewindsLeft=3;elapsed=0;won=false;
+  hideWin();layout(true);updateBar();announce('Same cards, fresh start.');
+}
+function resume(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(SAVE_KEY));
+    if(saved?.version!==1 || !validSnapshot(saved.state) || !validSnapshot(saved.initial) || ![1,3].includes(saved.drawCount) || !Number.isFinite(saved.elapsed)||saved.elapsed<0||!Array.isArray(saved.history)||!saved.history.every(validSnapshot))return false;
+    seed=saved.seed>>>0;drawCount=saved.drawCount;elapsed=saved.elapsed;initial=saved.initial;dealKind=saved.dealKind==='Daily'?'Daily':'Classic';winRecorded=!!saved.winRecorded;
+    deal();applySnapshot(saved.state);history=saved.history;shufflesLeft=saved.shufflesLeft===0?0:1;
+    rewindsLeft=Number.isInteger(saved.rewindsLeft)?Math.max(0,Math.min(3,saved.rewindsLeft)):3;
+    document.getElementById('drawMode').value=drawCount;
+    won=foundations.every(f=>f.length===13);if(won)showWin();layout(true);updateBar();announce('Welcome back! Your game is saved.');return true;
+  }catch{return false;}
+}
 
 function buildCards(){ cards=[]; let id=0; for(let s=0;s<4;s++) for(let r=1;r<=13;r++) cards.push({id:id++,suit:s,rank:r,color:SUITS[s].color,up:false}); }
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 function deal(){
+  stopAuto();clearHint();
   buildCards();
-  const d = shuffle(cards.slice());
+  const d = shuffled(cards,seededRandom(seed));
   tableau=[[],[],[],[],[],[],[]];
   let i=0;
   for(let c=0;c<7;c++) for(let k=0;k<=c;k++){ const card=d[i++]; card.up=(k===c); tableau[c].push(card); }
@@ -46,9 +109,13 @@ function deal(){
   for(const card of cards){
     const e=document.createElement('div'); e.className='card down'; e._s='d'; e.dataset.id=card.id;
     e.addEventListener('pointerdown', ev=>onPointerDown(ev, card));
+    e.setAttribute('role','button');e.tabIndex=0;
+    e.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();onClick(card);}});
     board.appendChild(e); elMap.set(card.id,e);
   }
   slotEl.stock.addEventListener('click', drawStock);
+  slotEl.stock.setAttribute('role','button');slotEl.stock.tabIndex=0;slotEl.stock.setAttribute('aria-label','Draw cards or recycle stock');
+  slotEl.stock.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();drawStock();}});
   hideWin(); layout(true); updateBar();
 }
 
@@ -80,16 +147,17 @@ function locate(card){
 
 /* ---- interaction --------------------------------------------------------- */
 function onClick(card){
-  if(won) return;
+  if(won||reversing) return;
   const loc=locate(card); if(!loc) return;
   if(loc.type==='stock'){ drawStock(); return; }
-  if(loc.type==='foundation' || !card.up) return;
+  if(!card.up) return;
 
   let run;
-  if(loc.type==='waste'){ if(card!==topOf(waste)) return; run=[card]; }
+  if(loc.type==='foundation'){if(card!==topOf(foundations[loc.col]))return;run=[card];}
+  else if(loc.type==='waste'){ if(card!==topOf(waste)) return; run=[card]; }
   else { run=tableau[loc.col].slice(loc.idx); if(!runValid(run)){ wiggle(card); return; } }
 
-  if(run.length===1 && foundationFor(card)>=0){ doFoundation(card, loc); return; }
+  if(loc.type!=='foundation' && run.length===1 && foundationFor(card)>=0){ doFoundation(card, loc); return; }
   for(let c=0;c<7;c++){
     if(loc.type==='tableau' && c===loc.col) continue;
     if(canTableau(run[0], c)){ doTableau(run, loc, c); return; }
@@ -97,6 +165,7 @@ function onClick(card){
   wiggle(card);
 }
 function removeRun(loc, n){
+  if(loc.type==='foundation')return foundations[loc.col].splice(-n,n);
   if(loc.type==='waste') return waste.splice(waste.length-n, n);
   return tableau[loc.col].splice(loc.idx);
 }
@@ -110,34 +179,47 @@ function doFoundation(card, loc){
   pushHistory();
   removeRun(loc, 1);
   foundations[card.suit].push(card);
-  bump([card]); flipSource(loc); moves++; sfx.foundation();
+  bump([card]); flipSource(loc); moves++; sfx.foundation();haptic();
   layout(false); updateBar(); checkWin();
 }
 function doTableau(run, loc, col){
   pushHistory();
   removeRun(loc, run.length);
   for(const c of run) tableau[col].push(c);
-  bump(run); flipSource(loc); moves++; sfx.place();
+  bump(run); flipSource(loc); moves++; sfx.place();haptic();
   layout(false); updateBar();
 }
 function drawStock(){
-  if(won) return;
+  if(won || reversing || (!stock.length&&!waste.length)) return;
   pushHistory();
-  if(stock.length){ const c=stock.pop(); c.up=true; waste.push(c); bump([c]); sfx.deal(); }
+  if(stock.length){ for(let i=0;i<drawCount&&stock.length;i++){const c=stock.pop(); c.up=true; waste.push(c); bump([c]);} sfx.deal(); }
   else if(waste.length){ while(waste.length){ const c=waste.pop(); c.up=false; stock.push(c); } sfx.shuffle(); }
-  moves++; layout(false); updateBar();
+  moves++; haptic(); layout(false); updateBar();
 }
 function autoFinish(){
-  const iv=setInterval(()=>{ if(won || !autoStep()) clearInterval(iv); }, 170);
+  if(reversing)return;
+  if(autoTimer){stopAuto();announce('Auto-finish stopped.');return;}
+  if(stock.length||tableau.some(p=>p.some(c=>!c.up))){announce('Auto-finish becomes available when every card is revealed and the stock is empty.');return;}
+  autoTimer=setInterval(()=>{if(won||!autoStep())stopAuto();},170);
 }
 function autoStep(){
   const cand=[];
   if(waste.length) cand.push([topOf(waste), {type:'waste'}]);
   for(let c=0;c<7;c++){ const p=tableau[c]; if(p.length && topOf(p).up) cand.push([topOf(p), {type:'tableau',col:c,idx:p.length-1}]); }
-  for(const [card,loc] of cand){ if(foundationFor(card)>=0){ doFoundation(card,loc); return true; } }
+  for(const [card,loc] of cand){ if(foundationFor(card)>=0 && safeFoundation(card,foundations)){ doFoundation(card,loc); return true; } }
   return false;
 }
-function checkWin(){ if(foundations.every(f=>f.length===13)){ won=true; sfx.win(); showWin(); updateBar(); } }
+function checkWin(){ if(foundations.every(f=>f.length===13)){
+  won=true;stopAuto();
+  if(!winRecorded){
+    stats.wins++;stats.bestMoves=stats.bestMoves===null?moves:Math.min(stats.bestMoves,moves);
+    stats.bestTime=stats.bestTime===null?elapsed:Math.min(stats.bestTime,elapsed);
+    const score=Math.max(100,5200-moves*10-Math.floor(elapsed/5));
+    stats.highScores=[...(Array.isArray(stats.highScores)?stats.highScores:[]),{score,moves,seconds:elapsed,draw:drawCount,kind:dealKind,assisted:shufflesLeft===0,date:new Date().toISOString()}].sort((a,b)=>b.score-a.score).slice(0,20);
+    winRecorded=true;saveStats();
+  }
+  sfx.win();haptic('win');showWin();updateBar();
+} }
 
 /* ---- Arline's time powers (Braid-style) ----------------------------------- */
 // History entries are plain snapshots (abilities.js); ability counters live
@@ -145,36 +227,47 @@ function checkWin(){ if(foundations.every(f=>f.length===13)){ won=true; sfx.win(
 // cards back but the shuffle stays spent, so the powers can't be farmed.
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 function pushHistory(){
+  clearHint();
   history.push(abSnapshot({stock, waste, foundations, tableau, moves}));
-  if(history.length > 200) history.shift();
 }
 function rewind(){
-  if(won || rewindsLeft <= 0 || !history.length) return;
+  if(!history.length||reversing) return;stopAuto();clearHint();won=false;hideWin();
   const s = abRestore(history.pop(), cardsById);
   stock = s.stock; waste = s.waste; foundations = s.foundations; tableau = s.tableau; moves = s.moves;
-  rewindsLeft--;
-  rewindWash(); sfx.shuffle();
+  haptic();
   layout(false); updateBar();          // every card slides back — the Braid feel
 }
+async function timeReverse(){
+  if(reversing||rewindsLeft<=0||!history.length)return;
+  stopAuto();clearHint();reversing=true;rewindsLeft--;won=false;hideWin();
+  const count=Math.min(3,history.length);
+  board.classList.add('time-reversing');rewindWash();
+  for(let i=0;i<count;i++){
+    applySnapshot(history.pop());layout(false);updateBar();haptic();
+    if(!reducedMotion.matches&&!preferences.reducedMotion)await new Promise(r=>setTimeout(r,360));
+  }
+  reversing=false;board.classList.remove('time-reversing');updateBar();
+  announce('Reversed '+count+' move'+(count===1?'':'s')+'. '+rewindsLeft+' Time Reverse charges left.');
+}
 function doMagicShuffle(){
-  if(won || shufflesLeft <= 0) return;
+  if(won || reversing || shufflesLeft <= 0) return;
   const snap = abSnapshot({stock, waste, foundations, tableau, moves});
   const n = magicShuffle({stock, tableau}, Math.random);
   if(n < 2){ sfx.invalid(); return; }  // fewer than 2 hidden cards: nothing to shuffle, don't spend it
-  history.push(snap); if(history.length > 200) history.shift();
+  stopAuto();clearHint();history.push(snap);
   shufflesLeft--;
   shimmerHidden(); sfx.shuffle();
   layout(false); updateBar();
 }
 function rewindWash(){
-  if(reducedMotion.matches) return;
+  if(reducedMotion.matches||preferences.reducedMotion) return;
   let w = document.getElementById('rewindWash');
   if(!w){ w = document.createElement('div'); w.id = 'rewindWash'; w.className = 'rewind-wash'; document.body.appendChild(w); }
   w.classList.remove('on'); void w.offsetWidth; w.classList.add('on');
   clearTimeout(w._t); w._t = setTimeout(() => w.classList.remove('on'), 520);
 }
 function shimmerHidden(){
-  if(reducedMotion.matches) return;
+  if(reducedMotion.matches||preferences.reducedMotion) return;
   board.querySelectorAll('.card.down').forEach(e => {
     e.classList.add('shimmer');
     setTimeout(() => e.classList.remove('shimmer'), 720);
@@ -184,11 +277,13 @@ function wiggle(card){ const e=elMap.get(card.id); if(e){ e.classList.add('shake
 
 /* ---- pointer: tap OR drag (both work) ------------------------------------ */
 function onPointerDown(ev, card){
-  if(won) return;
+  if(won||reversing) return;
+  if(ev.isPrimary===false||ev.button>0)return;
+  stopAuto();
   const loc=locate(card); if(!loc) return;
   drag={card, loc, sx:ev.clientX, sy:ev.clientY, moved:false, run:null, base:null};
-  if((loc.type==='waste' && card===topOf(waste)) || (loc.type==='tableau' && card.up)){
-    let run = loc.type==='waste' ? [card] : tableau[loc.col].slice(loc.idx);
+  if((loc.type==='waste' && card===topOf(waste)) || (loc.type==='tableau' && card.up) || (loc.type==='foundation'&&card===topOf(foundations[loc.col]))){
+    let run = loc.type==='tableau' ? tableau[loc.col].slice(loc.idx) : [card];
     if(loc.type==='tableau' && !runValid(run)) run=null;
     if(run){ drag.run=run; drag.base=run.map(c=>({...posMap.get(c.id)})); }
   }
@@ -199,7 +294,7 @@ function onPointerDown(ev, card){
 function onPointerMove(ev){
   if(!drag) return;
   const dx=ev.clientX-drag.sx, dy=ev.clientY-drag.sy;
-  if(!drag.moved && Math.hypot(dx,dy)>7) drag.moved=true;
+  if(!drag.moved && Math.hypot(dx,dy)>7){drag.moved=true;if(drag.run){haptic();sfx.pickup();}}
   if(drag.moved && drag.run) drag.run.forEach((c,i)=>{
     const e=elMap.get(c.id); e.classList.add('dragging'); e.style.zIndex=3000+i;
     e.style.transform=`translate(${drag.base[i].x+dx}px,${drag.base[i].y+dy}px)`;
@@ -207,12 +302,14 @@ function onPointerMove(ev){
 }
 function onPointerUp(ev){
   removeEventListener('pointermove', onPointerMove);
+  removeEventListener('pointerup',onPointerUp);removeEventListener('pointercancel',onPointerUp);
   const d=drag; drag=null; if(!d) return;
   if(d.run) d.run.forEach(c=> elMap.get(c.id).classList.remove('dragging'));
+  if(ev.type==='pointercancel'){layout(false);return;}
   if(!d.moved){ if(d.loc.type==='stock') drawStock(); else onClick(d.card); return; }   // a tap
   if(!d.run){ layout(false); return; }
   const hit=hitTest(ev.clientX, ev.clientY);                                            // a drag-drop
-  if(hit && hit.type==='foundation' && d.run.length===1 && foundationFor(d.card)>=0){ doFoundation(d.card, d.loc); return; }
+  if(hit && hit.type==='foundation' && hit.idx===d.card.suit && d.loc.type!=='foundation' && d.run.length===1 && foundationFor(d.card)>=0){ doFoundation(d.card, d.loc); return; }
   if(hit && hit.type==='tableau' && !(d.loc.type==='tableau' && hit.col===d.loc.col) && canTableau(d.run[0], hit.col)){ doTableau(d.run, d.loc, hit.col); return; }
   layout(false);   // illegal drop → slide back
 }
@@ -237,7 +334,7 @@ function layout(instant){
   const colX = c => pad + c*(CW+gap);
   const topY = pad;
   const tabY = pad + CH + Math.round(gap*1.6);
-  const dyDown = Math.round(CH*0.17), dyUp = Math.round(CH*0.36);   // fan reveals the full big index
+  const dyDown = Math.max(24,Math.round(CH*0.17)), dyUp = Math.max(28,Math.round(CH*0.36));
   geo = {gap, CW, CH, topY, tabY, colX};
 
   setSlot('stock', colX(0), topY); setSlot('waste', colX(1), topY);
@@ -260,6 +357,9 @@ function layout(instant){
 function setSlot(name,x,y){ const e=slotEl[name]; if(e) e.style.transform=`translate(${x}px,${y}px)`; }
 function put(card,x,y,zi){ const e=elMap.get(card.id); e.style.transform=`translate(${x}px,${y}px)`; e.style.zIndex=zi+1; posMap.set(card.id,{x,y}); face(e,card); }
 function face(e,card){
+  e.setAttribute('aria-label',card.up?RANKS[card.rank]+' '+SUIT_NAME[card.suit]:'Face-down card');
+  const loc=locate(card);e.tabIndex=card.up&&(loc?.type==='tableau'||(loc?.type==='waste'&&card===topOf(waste))||(loc?.type==='foundation'&&card===topOf(foundations[loc.col])))?0:-1;
+  if(card.up&&loc)e.setAttribute('aria-label',e.getAttribute('aria-label')+', '+(loc.type==='tableau'?'column '+(loc.col+1):loc.type));
   if(card.up){
     if(e._s!=='u'){ e.classList.remove('down'); e.classList.add('up'); e._s='u'; }
     e.classList.toggle('red', card.color==='red');
@@ -280,26 +380,32 @@ function faceHTML(card){
 function showWin(){ const w=document.getElementById('win'); if(w){ w.classList.add('show'); const m=document.getElementById('winMoves'); if(m) m.textContent=moves; } confetti(); }
 function hideWin(){ const w=document.getElementById('win'); if(w) w.classList.remove('show'); }
 function confetti(){
+  if(reducedMotion.matches||preferences.reducedMotion)return;
   const cols=['#e9c34a','#d11f33','#39a14a','#1f6fd0','#fff0b0'];
-  for(let i=0;i<90;i++){ const d=document.createElement('div'); d.className='confetti';
+  for(let i=0;i<40;i++){ const d=document.createElement('div'); d.className='confetti';
     d.style.left=Math.random()*100+'vw'; d.style.background=cols[i%cols.length];
     d.style.animation=`drop ${1+Math.random()*1.6}s ${Math.random()*0.6}s ease-in forwards`;
     document.body.appendChild(d); setTimeout(()=>d.remove(),3200); }
 }
-function updateBar(){
+function updateBar(persist=true){
   const m=document.getElementById('moves'); if(m) m.textContent = moves + (moves===1?' move':' moves');
   const rb=document.getElementById('rewindBtn');
   if(rb){
-    const n=document.getElementById('rewindCount'); if(n) n.textContent='x'+rewindsLeft;
-    rb.disabled = won || rewindsLeft<=0 || !history.length;
-    rb.setAttribute('aria-label', `Rewind last move, ${rewindsLeft} left`);
+    const n=document.getElementById('rewindCount'); if(n) n.textContent='';
+    rb.disabled = !history.length||reversing;
+    rb.setAttribute('aria-label', 'Undo last move');
   }
+  const reverse=document.getElementById('timeReverse');if(reverse){reverse.disabled=reversing||rewindsLeft<=0||!history.length;document.getElementById('reverseCount').textContent=rewindsLeft+' left';}
   const sb=document.getElementById('shuffleBtn');
   if(sb){
     const n=document.getElementById('shuffleCount'); if(n) n.textContent='x'+shufflesLeft;
     sb.disabled = won || shufflesLeft<=0;
     sb.setAttribute('aria-label', `Magic shuffle the hidden cards, ${shufflesLeft} left`);
   }
+  const timer=document.getElementById('timer');if(timer)timer.textContent=Math.floor(elapsed/60)+':'+String(elapsed%60).padStart(2,'0');
+  const progress=document.getElementById('progress');if(progress)progress.textContent=foundations.reduce((n,p)=>n+p.length,0)+' / 52 home';
+  const summary=document.getElementById('stats');if(summary)summary.textContent=dealKind+' · '+stats.wins+' wins'+(stats.bestMoves===null?'':' · Best: '+stats.bestMoves+' moves');
+  if(persist)saveGame();
 }
 
 /* ---- load screen --------------------------------------------------------- */
@@ -321,19 +427,31 @@ function hideLoader(){
 
 /* ---- go ------------------------------------------------------------------ */
 if(board){
-  document.getElementById('newGame')?.addEventListener('click', deal);
+  document.getElementById('newGame')?.addEventListener('click', ()=>newGame());
+  document.getElementById('restartBtn')?.addEventListener('click',restart);
+  document.getElementById('hintBtn')?.addEventListener('click',hint);
+  document.getElementById('playHint')?.addEventListener('click',playHint);
+  document.getElementById('dailyBtn')?.addEventListener('click',()=>newGame('Daily'));
+  document.getElementById('drawMode')?.addEventListener('change',()=>newGame());
   document.getElementById('autoBtn')?.addEventListener('click', autoFinish);
   document.getElementById('rewindBtn')?.addEventListener('click', rewind);
+  document.getElementById('timeReverse')?.addEventListener('click',timeReverse);
   document.getElementById('shuffleBtn')?.addEventListener('click', doMagicShuffle);
-  document.getElementById('winNew')?.addEventListener('click', ()=>{ hideWin(); deal(); });
+  document.getElementById('winNew')?.addEventListener('click', ()=>newGame());
   window.__sol = {
     get stock(){ return stock.length },
     get waste(){ return waste.length },
     get moves(){ return moves },
     get rewindsLeft(){ return rewindsLeft },
     get shufflesLeft(){ return shufflesLeft },
+    get state(){return snapshot();},
+    get drawCount(){return drawCount;},
+    get historyLength(){return history.length;},
   };
   let rt; addEventListener('resize', ()=>{ clearTimeout(rt); rt=setTimeout(()=>layout(true), 120); });
-  deal();
+  if(!resume())newGame();
+  setInterval(()=>{if(!won&&!document.hidden){elapsed++;updateBar(false);if(elapsed%5===0)saveGame();}},1000);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){stopAuto();saveGame();}});
+  addEventListener('pagehide',saveGame);
   Promise.race([ preloadDeck(), new Promise(r => setTimeout(r, 3500)) ]).then(hideLoader);
 }
