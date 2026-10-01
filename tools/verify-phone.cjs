@@ -21,6 +21,7 @@ const assert=require('node:assert/strict');
    const id=await page.evaluate(()=>window.__sol.state.stock.at(-1)?.id);if(id===undefined)break;await tapCard(id);
   }
   assert.ok(move,'Find a real legal move for drag testing');
+  await page.waitForTimeout(350); // Let the preceding deal/flip settle before grabbing.
   const before=await page.evaluate(()=>window.__sol.moves);
   const source=await page.locator(`.card[data-id="${move.card}"]`).boundingBox();
   const target=await page.locator(move.to[0]==='f'?'.slot.foundation':'.slot.tableau').nth(Number(move.to[1])).boundingBox();
@@ -30,10 +31,12 @@ const assert=require('node:assert/strict');
   const state=await page.evaluate(()=>window.__sol.state),all=[...state.stock,...state.waste,...state.tableau.flat(),...state.foundations.flat()];
   assert.equal(new Set(all.map(c=>c.id)).size,52);
   // Wait for full precaching, then simulate an offline installed-phone reload.
-  await page.waitForFunction(async()=>{
-   if(!navigator.serviceWorker.controller)return false;
-   const c=await caches.open('solitaire-friends-v3');return (await c.keys()).length>=100;
-  },null,{timeout:60000});
+  await page.evaluate(async()=>{
+   await navigator.serviceWorker.ready;
+   if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}));
+   const c=await caches.open('solitaire-friends-v3');
+   if((await c.keys()).length<100)throw Error('Offline cache incomplete');
+  });
   await context.setOffline(true);await page.reload();await page.waitForFunction(()=>window.__sol?.state);
   assert.deepEqual(await page.evaluate(()=>window.__sol.state),state);
   assert.equal(await page.locator('.card img').evaluateAll(images=>images.every(i=>i.complete&&i.naturalWidth>0)),true);
