@@ -1,13 +1,18 @@
 {
-  "name": "Arline Arcade",
-  "short_name": "Arcade",
-  "description": "A cozy, ad-free arcade — solitaire, freecell, uno, roulette, bowling and more. No sign-ups, no tracking, just games.",
+  "name": "Solitaire and Friends",
+  "short_name": "Solitaire",
+  "description": "Solitaire, FreeCell and friendly arcade games. Ad-free, no sign-ups, with the original gold card artwork.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#04341f",
   "theme_color": "#0b6b40",
   "icons": [
-    { "src": "assets/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    {
+      "src": "assets/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
   ]
 }

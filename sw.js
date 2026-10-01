@@ -1,4 +1,4 @@
-/* Arline Arcade — service worker.
+/* Solitaire and Friends — service worker.
    Self-updating: no manual cache-clearing, and no "re-download everything" on a deploy.
 
    - App code (HTML/JS/CSS/manifest): NETWORK-FIRST → you always get the latest build

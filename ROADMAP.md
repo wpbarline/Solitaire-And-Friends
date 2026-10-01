@@ -1,4 +1,4 @@
-# Arline Arcade — Roadmap
+# Solitaire and Friends — Roadmap
 
 The plan, the to-do list, and the house rules — all in one place.
 Live site: https://mansfieldplumbing.github.io/ArlineArcade/

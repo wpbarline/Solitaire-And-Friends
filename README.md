@@ -1,4 +1,4 @@
-# Arline Arcade
+# Solitaire and Friends
 
 A cozy, **ad-free** game arcade — built for Arline, who loves Solitaire and Uno.
 No ads, no sign-ups, no tracking. Just open it and play.
