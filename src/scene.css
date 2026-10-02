@@ -88,3 +88,4 @@ html.reduce-motion *,html.reduce-motion *:before,html.reduce-motion *:after{anim
 .play-top .score-hud{gap:12px;min-width:0;padding:6px 8px}
 .player-greeting{top:auto;bottom:calc(env(safe-area-inset-bottom) + 115px)}
 @media(orientation:landscape) and (max-height:550px){.home-player{margin-top:2px;font-size:14px}.home-player .edit-name{width:48px;height:48px}.title-logo{max-height:calc(100% - 125px)}.play-top .game-select{flex-direction:column;gap:2px}.player-greeting{bottom:75px}}
+.app-storage{display:flex;flex-direction:column;gap:14px;padding:12px 0}.app-storage>.scene-button{justify-content:flex-start;min-height:58px;padding:14px 18px;background:#ffffff0b}.app-storage>.scene-button span{font-size:17px}

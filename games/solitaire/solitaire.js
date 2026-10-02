@@ -37,10 +37,11 @@ try{stats={...stats,...JSON.parse(localStorage.getItem(STATS_KEY))};}catch{}
 function stopAuto(){clearInterval(autoTimer);autoTimer=null;}
 function snapshot(){return abSnapshot({stock,waste,foundations,tableau,moves});}
 function saveGame(){
+  if(window.__gameErasingData)return;
   if(!cards)return;
   try{const previous=localStorage.getItem(SAVE_KEY);if(previous)localStorage.setItem(SAVE_KEY+'-previous',previous);localStorage.setItem(SAVE_KEY,JSON.stringify({version:1,savedAt:Date.now(),checkpoint:++checkpointSequence,seed,drawCount,elapsed,initial,dealKind,winRecorded,shufflesLeft,rewindsLeft,surprisesLeft,state:snapshot(),history}));}catch{ announce('Storage is full. This game may not resume after closing.'); }
 }
-function saveStats(){try{localStorage.setItem(STATS_KEY,JSON.stringify(stats));}catch{}}
+function saveStats(){if(window.__gameErasingData)return;try{localStorage.setItem(STATS_KEY,JSON.stringify(stats));}catch{}}
 function applySnapshot(s){const restored=abRestore(s,cardsById);({stock,waste,foundations,tableau,moves}=restored);}
 function announce(text){dispatchEvent(new CustomEvent('solitaire-message',{detail:text}));}
 function clearHint(){board.querySelectorAll('.hinted').forEach(e=>e.classList.remove('hinted'));currentHint=null;document.getElementById('playHint')?.setAttribute('hidden','');dispatchEvent(new CustomEvent('solitaire-hint',{detail:false}));}
