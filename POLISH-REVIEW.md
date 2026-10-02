@@ -1,5 +1,11 @@
 # 2D polish release — October 1, 2026
 
+## Intro follow-up
+
+Scott requested the owned original ArlineArcade shader after this release. src/intro-shader.js adapts the original d1ef00f shader as a transparent 5.2-second effect over the purple scene/sparkles, capped at 900px and approximately 30fps. It stops while hidden, respects reduced motion, releases resources on unmount, and leaves the existing Canvas2D scene usable when WebGL is unavailable. No game-engine rewrite or card-file change is involved.
+
+Play now uses the individually verified nathanmanaker harp flourish (Pixabay 6251), documented in audio credits/inventory. Music production trim is reduced from 0.75 to 0.20, preserving saved volume settings. Both fresh and resumed boards stage cards at the deck synchronously before the first visible frame, then animate into their exact positions; resumed state/history are unchanged. New verify-intro coverage confirms shader compilation/termination, reduced motion, real saved entrance transitions, state/history conservation and offline harp inclusion. Deal, audio, state, phone offline, rules, update and artwork checks accompany this follow-up.
+
 ## Findings and behavior
 
 Card faces were injected lazily and destroyed when turned down; preloading ran after mounting, errors had no visible fallback, and all cards carried permanent compositor hints. Stable image nodes now load/decode before the board becomes playable, with readable rank/suit fallback on failure. This removes identified lifecycle risks; the intermittent Android compositor glitch has not been reproduced on physical hardware. All 97 protected artwork files remain byte-identical.

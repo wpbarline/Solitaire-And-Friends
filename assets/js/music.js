@@ -1,6 +1,6 @@
 import {preferences,setPreference} from './preferences.js';
 const player=new Audio(new URL('../audio/magic-puzzle.ogg',import.meta.url));player.loop=true;player.preload='none';
-const MUSIC_OUTPUT_TRIM=.75;
+const MUSIC_OUTPUT_TRIM=.20;
 let gestured=false,ducked=false,duckTimer,duckUntil=0;
 function sync(){
   player.volume=preferences.musicVolume*MUSIC_OUTPUT_TRIM*(ducked?.25:1);

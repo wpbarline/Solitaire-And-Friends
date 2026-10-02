@@ -43,7 +43,7 @@ const assert=require('node:assert/strict');
   assert.equal(await page.locator('.card img').evaluateAll(images=>images.every(i=>i.complete&&i.naturalWidth>0)),true);
   const sounds=await page.evaluate(async()=>{
    const c=new AudioContext();const result=[];
-   for(const name of ['card-shuffle.wav','card-contact.wav','launch-chime.wav','menu-open.wav','menu-close.wav','hint-chime.wav','reverse-chime.wav','tap-chime.wav','surprise-bonus.ogg','tada.ogg']){const r=await fetch('../../assets/audio/'+name);const b=await c.decodeAudioData(await r.arrayBuffer());result.push(b.duration>0);}
+   for(const name of ['card-shuffle.wav','card-contact.wav','harp-transition.ogg','menu-open.wav','menu-close.wav','hint-chime.wav','reverse-chime.wav','tap-chime.wav','surprise-bonus.ogg','tada.ogg']){const r=await fetch('../../assets/audio/'+name);const b=await c.decodeAudioData(await r.arrayBuffer());result.push(b.duration>0);}
    await c.close();return result;
   });assert.ok(sounds.every(Boolean));
   await page.goto('http://127.0.0.1:8771/Solitaire-And-Friends/');assert.match(await page.locator('#startGame').textContent(),/Continue playing/);

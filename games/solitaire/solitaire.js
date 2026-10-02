@@ -67,7 +67,7 @@ function newGame(kind='Classic',mode=drawCount,audible=true){
   if(reversing)return;
   dealKind=kind;seed=kind==='Daily'?dailySeed():Math.floor(Math.random()*4294967296);
   drawCount=[1,3].includes(Number(mode))?Number(mode):1;
-  elapsed=0;winRecorded=false;if(audible){sfx.unlock();sfx.shuffle();}deal();if(audible){const generation=deckGeneration;deckReadyPromise.then(()=>{if(generation===deckGeneration&&board.isConnected)animateDeal();});}initial=snapshot();stats.played++;saveStats();saveGame();
+  elapsed=0;winRecorded=false;if(audible){sfx.unlock();}deal();if(audible){const generation=deckGeneration;deckReadyPromise.then(()=>{if(generation===deckGeneration&&board.isConnected)animateDeal();});}initial=snapshot();stats.played++;saveStats();saveGame();
   announce(kind==='Daily'?"Today's shared deal. Winning is not guaranteed.":'A fresh deal. Have fun!');
 }
 function restart(){
@@ -388,18 +388,17 @@ function layout(instant){
   // Height is supplied by the viewport grid; fan spacing fits each column.
   if(instant){ void board.offsetWidth; board.classList.remove('no-anim'); }
 }
-function animateDeal(){
- stopDeal();
+function animateDeal(resumed=false){
+ stopDeal();sfx.shuffle();
  if(reducedMotion.matches||preferences.reducedMotion)return;
  dealing=true;board.classList.add('dealing');
- dealFrame=requestAnimationFrame(()=>{
  const source=posMap.get(topOf(stock)?.id)||{x:0,y:0};
  board.classList.add('no-anim');
- tableau.forEach((pile,col)=>pile.forEach((card,i)=>{const e=elMap.get(card.id);e.style.transform='translate('+source.x+'px,'+source.y+'px)';e.style.transitionDelay=((col*(col+1)/2+i)*.023)+'s';}));
+ const entrance=resumed?[...tableau.flat(),...waste,...foundations.flat()]:tableau.flat();
+ entrance.forEach((card,i)=>{const e=elMap.get(card.id);e.style.transform='translate('+source.x+'px,'+source.y+'px)';e.style.transitionDelay=(i*.023)+'s';});
  void board.offsetWidth;board.classList.remove('no-anim');
  dealFrame=requestAnimationFrame(()=>{layout(false);});
- dealTimer=setTimeout(stopDeal,1100);
- });
+ dealTimer=setTimeout(stopDeal,Math.max(1100,entrance.length*23+350));
 }
 function setSlot(name,x,y){ const e=slotEl[name]; if(e) e.style.transform=`translate(${x}px,${y}px)`; }
 function put(card,x,y,zi){ const e=elMap.get(card.id); e.style.transform=`translate(${x}px,${y}px)`; e.style.zIndex=zi+1; posMap.set(card.id,{x,y}); face(e,card); }
@@ -469,7 +468,7 @@ export function mountSolitaire(element){
  addEventListener('pagehide',saveGame,{signal});
  addEventListener('game-before-update',()=>{stopAuto();saveGame();},{signal});
  const resumed=resume();if(!resumed)newGame('Classic',1,false);
- if(!resumed){const generation=deckGeneration;deckReadyPromise.then(()=>{if(generation===deckGeneration&&board.isConnected&&!signal.aborted)animateDeal();});}
+ {const generation=deckGeneration;deckReadyPromise.then(()=>{if(generation===deckGeneration&&board.isConnected&&!signal.aborted)animateDeal(resumed);});}
  const clock=setInterval(()=>{if(deckReady&&!won&&!document.hidden){elapsed++;updateBar(false);if(elapsed%5===0)saveGame();}},1000);
  deckReadyPromise.then(hideLoader);
  return ()=>{saveGame();stopDeal();stopAuto();clearInterval(clock);resize.disconnect();lifecycle.abort();removeEventListener('pointermove',onPointerMove);removeEventListener('pointerup',onPointerUp);removeEventListener('pointercancel',onPointerUp);drag=null;document.getElementById('rewindWash')?.remove();};

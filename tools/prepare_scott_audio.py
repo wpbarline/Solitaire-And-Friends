@@ -5,6 +5,7 @@ import numpy as np
 import soundfile as sf
 root=Path(__file__).resolve().parents[1];audio=root/'assets/audio';masters=audio/'candidates/scott'
 verified={
+ 'freesound_community-harp-flourish-6251.mp3':('nathanmanaker (Freesound)','https://pixabay.com/sound-effects/musical-harp-flourish-6251/','harp-transition.ogg'),
  'oxidvideos-shuffling-deck-of-cards-522518.mp3':('OxidVideos','https://pixabay.com/sound-effects/film-special-effects-shuffling-deck-of-cards-522518/','card-shuffle.wav'),
  'oxidvideos-taking-playing-card-522520.mp3':('OxidVideos','https://pixabay.com/sound-effects/film-special-effects-taking-playing-card-522520/','card-contact.wav'),
  'floraphonic-playful-casino-slot-machine-bonus-1-183918.mp3':('floraphonic','https://pixabay.com/sound-effects/film-special-effects-playful-casino-slot-machine-bonus-1-183918/','surprise-bonus.ogg')

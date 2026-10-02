@@ -13,7 +13,7 @@
     "attribution": "Not required; credited voluntarily",
     "production": "surprise-bonus.ogg",
     "edits": "Mono, peak .65, 8ms edge fades; production cue gain separately restrained.",
-    "productionSha256": "ea1e466e3eef6abcea25fb317aaf58358dd6a1d135d3e6a3a0578ce1d61030e5"
+    "productionSha256": "5063f0b477baa9b50138fff1d18620c81791b98121a065b06a2f1ba8ce914339"
   },
   {
     "file": "freesound_community-ascending-harp-40490.mp3",
@@ -37,7 +37,15 @@
     "seconds": 2.592,
     "sampleRate": 24000,
     "peak": 0.4197,
-    "status": "archived; source/license not independently verified; not used"
+    "status": "Verified for integration in this game; original excluded from distribution",
+    "creator": "nathanmanaker (Freesound)",
+    "source": "https://pixabay.com/sound-effects/musical-harp-flourish-6251/",
+    "license": "Pixabay Content License",
+    "terms": "https://pixabay.com/service/terms/",
+    "attribution": "Not required; credited voluntarily",
+    "production": "harp-transition.ogg",
+    "edits": "Mono, peak .65, 8ms edge fades; production cue gain separately restrained.",
+    "productionSha256": "b226e44948c3b9fdfd37aa3542a537b89b33e78d0055c707cebed95ef75df236"
   },
   {
     "file": "freesound_community-harp-glissando-down-28106.mp3",

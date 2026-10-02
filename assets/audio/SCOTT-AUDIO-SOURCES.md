@@ -7,3 +7,5 @@ Verified October 1, 2026: OxidVideos’s Shuffling Deck of Cards (522518), Takin
 Routine SFX only decode short recordings. The 19.25s and 44.14s glissandos, 8.98s ascending harp, 10.37s boings, 2.59s flourish and 4.85s motif remain archived and inactive because their original source/creator/license has not been independently verified. Filename prefixes alone are not a licensing record. They can be auditioned locally without publication.
 
 Derived clips are reproducible with tools/prepare_scott_audio.py. Manual Android/headphone audition remains necessary; amplitude checks do not determine whether a sound is pleasant.
+
+Harp flourish (6251) was verified October 1 on its primary Pixabay page: nathanmanaker (Freesound), https://pixabay.com/sound-effects/musical-harp-flourish-6251/, Pixabay Content License, voluntary credit. Its normalized mono derivative harp-transition.ogg now supplies Play entry. Five other candidates remain unused; motif2 source was identified but not promoted.
