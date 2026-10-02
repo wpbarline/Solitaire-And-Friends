@@ -4,7 +4,7 @@ import {preferences,setPreference} from './preferences.js';
 let gestureSeen=false;for(const type of ['pointerdown','keydown'])addEventListener(type,e=>{if(e.isTrusted)gestureSeen=true;},{passive:true});
 let ctx,master,compressor;const buffers=new Map(),bytes=new Map(),decoding=new Map(),voices=new Set();
 const cues={
- launch:{file:'harp-transition.ogg',gain:.65,bus:'UI',duck:2800},open:{file:'menu-open.wav',gain:.6,bus:'UI'},close:{file:'menu-close.wav',gain:.5,bus:'UI'},
+ launch:{file:'harp-transition.ogg',gain:.65,bus:'UI',duck:2800},open:{file:'harp-transition.ogg',gain:.28,bus:'UI',duck:1600},close:{file:'harp-transition.ogg',gain:.2,bus:'UI',duck:1200},
  hint:{file:'hint-chime.wav',gain:.65,bus:'UI'},reverse:{file:'reverse-chime.wav',gain:.6,bus:'UI',duck:950},tap:{file:'tap-chime.wav',gain:.4,bus:'UI'},
  surprise:{file:'surprise-bonus.ogg',gain:.45,bus:'Rewards',duck:4300},best:{file:'hint-chime.wav',gain:.4,bus:'Rewards',duck:1000},
  shuffle:{file:'card-shuffle.wav',gain:.5,bus:'Cards'},win:{file:'tada.ogg',gain:.65,bus:'Rewards',duck:1500}

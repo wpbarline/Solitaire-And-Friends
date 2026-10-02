@@ -10,10 +10,10 @@ const assert=require('node:assert/strict');
   const root=p.url();await p.locator('.slot.stock').press('Enter');assert.ok(await p.evaluate(()=>window.__sol.moves>0));
   p.once('dialog',d=>d.accept());await p.reload();await p.waitForFunction(()=>window.__sol?.ready);
   assert.equal(p.url(),root);assert.equal(await p.evaluate(()=>window.__sol.moves),0);
-  await p.getByRole('button',{name:'Home',exact:true}).click();await p.getByRole('button',{name:'UNO · Four players',exact:true}).click();
+  await p.getByRole('button',{name:'Game Select',exact:true}).click();await p.getByRole('button',{name:'UNO · Four players',exact:true}).click();
   await p.waitForSelector('#uno .opp');assert.equal(await p.locator('#uno .opp').count(),3);assert.equal(await p.locator('#uno .card-btn').count(),7);assert.equal(p.url(),root);
   assert.ok(await p.locator('#uno').evaluate(e=>e.getBoundingClientRect().bottom<=innerHeight+1),'UNO board fits viewport');
-  await p.getByRole('button',{name:'Home',exact:true}).click();await p.getByRole('button',{name:'Solitaire',exact:true}).click();
+  await p.getByRole('button',{name:'Game Select',exact:true}).click();await p.getByRole('button',{name:'Solitaire',exact:true}).click();
   await p.waitForFunction(()=>window.__sol?.ready);await p.waitForTimeout(1600);assert.equal(await p.locator('.card').count(),52);assert.deepEqual(errors,[]);
   console.log('PASS single URL, refresh restart, Solitaire/UNO switching, four players',viewport);await context.close();
  }

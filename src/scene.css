@@ -78,3 +78,13 @@ html.reduce-motion *,html.reduce-motion *:before,html.reduce-motion *:after{anim
 .audio-volume input[type=range]::-moz-range-track{height:10px;border-radius:10px;background:#ffffff24}
 .audio-volume input[type=range]::-moz-range-thumb{width:28px;height:28px;border:3px solid #ffe7f3;border-radius:50%;background:#f5a5ce}
 .title-card-fan img{background:#fffaf0}
+.home-player{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;max-width:90%;color:#f1d9eb;font-size:17px;z-index:2}
+.home-player>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.edit-name{display:grid;place-items:center;flex-shrink:0;width:48px;height:48px;border-radius:16px;border:1px solid #ffffff20;background:#ffffff0a;color:#ffe1a3}
+.edit-name svg{width:21px;height:21px}
+.play-top .game-select{flex-shrink:0;min-width:58px;padding:6px 2px}
+.play-top .game-select span{font-size:9px}
+.play-top{gap:5px;padding:0 5px}
+.play-top .score-hud{gap:12px;min-width:0;padding:6px 8px}
+.player-greeting{top:auto;bottom:calc(env(safe-area-inset-bottom) + 115px)}
+@media(orientation:landscape) and (max-height:550px){.home-player{margin-top:2px;font-size:14px}.home-player .edit-name{width:48px;height:48px}.title-logo{max-height:calc(100% - 125px)}.play-top .game-select{flex-direction:column;gap:2px}.player-greeting{bottom:75px}}
