@@ -11,6 +11,7 @@ import {hints, safeFoundation, validSnapshot} from './rules.js';
 import {seededRandom, shuffled, dailySeed} from '../../assets/js/game-primitives.js';
 import {createCardVisual,prepareBack} from './card-visuals.js';
 import {preferences} from '../../assets/js/preferences.js';
+import {beginReplay,recordReplay,saveReplay,validReplay,readReplays} from './replays.js';
 
 const SUITS = [{ch:'♠',color:'black'},{ch:'♥',color:'red'},{ch:'♦',color:'red'},{ch:'♣',color:'black'}];
 const RANKS = ['','A','2','3','4','5','6','7','8','9','10','J','Q','K'];
@@ -27,6 +28,10 @@ const topOf = a => a[a.length-1];
 const SAVE_KEY='solitaire-friends-game-v1', STATS_KEY='solitaire-friends-stats-v1';
 let seed=0,drawCount=1,elapsed=0,initial=null,autoTimer=null,dealKind='Classic',winRecorded=false;
 let currentHint=null,hintIndex=0;
+let recording=null,activeMs=0,lastClock=0,recordAction='move',ghostId=null;
+function tickClock(){const now=performance.now(),delta=lastClock?Math.max(0,now-lastClock):0;lastClock=now;if(deckReady&&!dealing&&!won&&!document.hidden&&!document.querySelector('dialog[open]')){activeMs+=delta;elapsed=Math.floor(activeMs/1000);}}
+function archiveRecording(){if(recording){recording.durationMs=Math.max(recording.durationMs,Math.round(activeMs));recording.completed=won;recording.assisted=shufflesLeft===0||surprisesLeft===0;saveReplay(recording);}}
+function startRecording(){activeMs=0;lastClock=performance.now();recording=beginReplay({seed,drawCount,initial:snapshot()});}
 let reversing=false;
 let checkpointSequence=0,surprisesLeft=1;
 let deckReady=false,deckGeneration=0,deckReadyPromise=Promise.resolve();
@@ -39,7 +44,8 @@ function snapshot(){return abSnapshot({stock,waste,foundations,tableau,moves});}
 function saveGame(){
   if(window.__gameErasingData)return;
   if(!cards)return;
-  try{const previous=localStorage.getItem(SAVE_KEY);if(previous)localStorage.setItem(SAVE_KEY+'-previous',previous);localStorage.setItem(SAVE_KEY,JSON.stringify({version:1,savedAt:Date.now(),checkpoint:++checkpointSequence,seed,drawCount,elapsed,initial,dealKind,winRecorded,shufflesLeft,rewindsLeft,surprisesLeft,state:snapshot(),history}));}catch{ announce('Storage is full. This game may not resume after closing.'); }
+  tickClock();archiveRecording();
+  try{const previous=localStorage.getItem(SAVE_KEY);if(previous)localStorage.setItem(SAVE_KEY+'-previous',previous);localStorage.setItem(SAVE_KEY,JSON.stringify({version:1,savedAt:Date.now(),checkpoint:++checkpointSequence,seed,drawCount,elapsed,initial,recordingId:recording?.id,activeMs,ghostId,dealKind,winRecorded,shufflesLeft,rewindsLeft,surprisesLeft,state:snapshot(),history}));}catch{ announce('Storage is full. This game may not resume after closing.'); }
 }
 function saveStats(){if(window.__gameErasingData)return;try{localStorage.setItem(STATS_KEY,JSON.stringify(stats));}catch{}}
 function applySnapshot(s){const restored=abRestore(s,cardsById);({stock,waste,foundations,tableau,moves}=restored);}
@@ -66,14 +72,14 @@ function playHint(){
 }
 function newGame(kind='Classic',mode=drawCount,audible=true){
   if(reversing)return;
-  dealKind=kind;seed=kind==='Daily'?dailySeed():Math.floor(Math.random()*4294967296);
+  archiveRecording();recording=null;activeMs=0;ghostId=null;dealKind=kind;seed=kind==='Daily'?dailySeed():Math.floor(Math.random()*4294967296);
   drawCount=[1,3].includes(Number(mode))?Number(mode):1;
-  elapsed=0;winRecorded=false;if(audible){sfx.unlock();}deal();if(audible){const generation=deckGeneration;deckReadyPromise.then(()=>{if(generation===deckGeneration&&board.isConnected)animateDeal();});}initial=snapshot();stats.played++;saveStats();saveGame();
+  elapsed=0;winRecorded=false;if(audible){sfx.unlock();}deal();if(audible){const generation=deckGeneration;deckReadyPromise.then(()=>{if(generation===deckGeneration&&board.isConnected)animateDeal();});}initial=snapshot();startRecording();stats.played++;saveStats();saveGame();
   announce(kind==='Daily'?"Today's shared deal. Winning is not guaranteed.":'A fresh deal. Have fun!');
 }
 function restart(){
-  if(!initial||reversing)return;stopAuto();clearHint();applySnapshot(initial);history=[];shufflesLeft=1;rewindsLeft=3;surprisesLeft=1;elapsed=0;won=false;
-  hideWin();layout(true);updateBar();announce('Same cards, fresh start.');
+  if(!initial||reversing)return;archiveRecording();recording=null;stopAuto();clearHint();applySnapshot(initial);history=[];shufflesLeft=1;rewindsLeft=3;surprisesLeft=1;elapsed=0;won=false;
+  startRecording();hideWin();layout(true);updateBar();announce('Same cards, fresh start.');
 }
 function readCheckpoint(){
  for(const key of [SAVE_KEY,SAVE_KEY+'-previous']){
@@ -87,12 +93,12 @@ function resume(){
     const saved=readCheckpoint();
     if(saved?.version!==1 || !validSnapshot(saved.state) || !validSnapshot(saved.initial) || ![1,3].includes(saved.drawCount) || !Number.isFinite(saved.elapsed)||saved.elapsed<0||!Array.isArray(saved.history)||!saved.history.every(validSnapshot))return false;
     checkpointSequence=Number(saved.checkpoint)||0;
-    seed=saved.seed>>>0;drawCount=saved.drawCount;elapsed=saved.elapsed;initial=saved.initial;dealKind=saved.dealKind==='Daily'?'Daily':'Classic';winRecorded=!!saved.winRecorded;
+    seed=saved.seed>>>0;drawCount=saved.drawCount;elapsed=saved.elapsed;initial=saved.initial;ghostId=typeof saved.ghostId==='string'?saved.ghostId:null;dealKind=ghostId?'Ghost':saved.dealKind==='Daily'?'Daily':'Classic';winRecorded=!!saved.winRecorded;
     deal();applySnapshot(saved.state);history=saved.history;shufflesLeft=saved.shufflesLeft===0?0:1;
     surprisesLeft=saved.surprisesLeft===0?0:1;
     rewindsLeft=Number.isInteger(saved.rewindsLeft)?Math.max(0,Math.min(3,saved.rewindsLeft)):3;
     if(document.getElementById('drawMode'))document.getElementById('drawMode').value=drawCount;
-    won=foundations.every(f=>f.length===13);if(won)showWin();layout(true);updateBar();announce('');return true;
+    won=foundations.every(f=>f.length===13);recording=readReplays().find(run=>run.id===saved.recordingId)||(validReplay(saved.recording)?saved.recording:null)||beginReplay({seed,drawCount,initial:snapshot()});activeMs=Math.max(elapsed*1000,recording.durationMs,Number(saved.activeMs)||0);lastClock=performance.now();if(won)showWin();layout(true);updateBar();announce('');return true;
   }catch{return false;}
 }
 
@@ -132,7 +138,7 @@ function deal(){
   slotEl.stock.addEventListener('click', drawStock);
   slotEl.stock.setAttribute('role','button');slotEl.stock.tabIndex=0;slotEl.stock.setAttribute('aria-label','Draw cards or recycle stock');
   slotEl.stock.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();drawStock();}});
-  hideWin(); layout(true); updateBar();prepareDeck();
+  hideWin(); layout(true); updateBar(false);prepareDeck();
 }
 
 /* ---- rules --------------------------------------------------------------- */
@@ -192,6 +198,7 @@ function flipSource(loc){
 }
 function bump(run){ for(const c of run) elMap.get(c.id).style.zIndex = 1000 + (zc++); }
 function doFoundation(card, loc){
+  recordAction=autoTimer?'auto-foundation':'foundation';
   pushHistory();
   removeRun(loc, 1);
   foundations[card.suit].push(card);
@@ -199,6 +206,7 @@ function doFoundation(card, loc){
   layout(false); updateBar(); checkWin();
 }
 function doTableau(run, loc, col){
+  recordAction='tableau';
   pushHistory();
   removeRun(loc, run.length);
   for(const c of run) tableau[col].push(c);
@@ -206,7 +214,7 @@ function doTableau(run, loc, col){
   layout(false); updateBar();
 }
 function drawStock(){
-  if(won || reversing || (!stock.length&&!waste.length)) return;
+  if(won || reversing || (!stock.length&&!waste.length)) return;recordAction=stock.length?'draw':'recycle';
   pushHistory();
   if(stock.length){ for(let i=0;i<drawCount&&stock.length;i++){const c=stock.pop(); c.up=true; waste.push(c); bump([c]);} sfx.deal(); }
   else if(waste.length){ while(waste.length){ const c=waste.pop(); c.up=false; stock.push(c); } sfx.shuffle(); }
@@ -251,7 +259,7 @@ function rewind(){
   if(!history.length||reversing) return;stopDeal();stopAuto();clearHint();won=false;hideWin();
   const s = abRestore(history.pop(), cardsById);
   stock = s.stock; waste = s.waste; foundations = s.foundations; tableau = s.tableau; moves = s.moves;
-  haptic();sfx.undo();
+  recordAction='undo';haptic();sfx.undo();
   layout(false); updateBar();          // every card slides back — the Braid feel
 }
 async function timeReverse(){
@@ -260,7 +268,7 @@ async function timeReverse(){
   const count=Math.min(3,history.length);
   board.classList.add('time-reversing');rewindWash();
   for(let i=0;i<count;i++){
-    applySnapshot(history.pop());layout(false);updateBar();haptic();sfx.undo(true);
+    recordAction='reverse';applySnapshot(history.pop());layout(false);updateBar();haptic();sfx.undo(true);
     if(!reducedMotion.matches&&!preferences.reducedMotion)await new Promise(r=>setTimeout(r,360));
   }
   reversing=false;board.classList.remove('time-reversing');updateBar();
@@ -271,7 +279,7 @@ function surprise(){
  const buried=stock.slice(0,-1);
  const card=buried.find(c=>foundationFor(c)>=0)||buried.find(c=>tableau.some((_,col)=>canTableau(c,col)));
  if(!card){announce('No helpful buried stock card is available. Your Surprise is still yours.');return;}
- stopAuto();pushHistory();stock.splice(stock.indexOf(card),1);card.up=true;waste.push(card);surprisesLeft--;moves++;
+ stopAuto();pushHistory();stock.splice(stock.indexOf(card),1);card.up=true;waste.push(card);surprisesLeft--;moves++;recordAction='surprise';
  sfx.deal();sfx.surprise();haptic();layout(false);updateBar();
  const element=elMap.get(card.id);element.classList.add('shimmer');setTimeout(()=>element.classList.remove('shimmer'),700);
  announce('Surprise! '+RANKS[card.rank]+SUITS[card.suit].ch+' is ready to play. This deal will be marked assisted.');
@@ -282,7 +290,7 @@ function doMagicShuffle(){
   const n = magicShuffle({stock, tableau}, Math.random);
   if(n < 2){ sfx.invalid(); return; }  // fewer than 2 hidden cards: nothing to shuffle, don't spend it
   stopAuto();clearHint();history.push(snap);
-  shufflesLeft--;
+  shufflesLeft--;recordAction='shuffle';
   shimmerHidden(); sfx.shuffle();
   layout(false); updateBar();
 }
@@ -430,7 +438,7 @@ function hud(){
  return {moves,elapsed,home,score,best,won,drawCount,rewindsLeft,shufflesLeft,historyLength:history.length,reversing,surprisesLeft,hint:!!currentHint,stats,dealKind};
 }
 function updateBar(persist=true){
-  if(persist)saveGame();
+  if(persist){tickClock();recordReplay(recording,snapshot(),activeMs,recordAction);saveGame();}
   dispatchEvent(new CustomEvent('solitaire-state',{detail:hud()}));
 }
 
@@ -459,18 +467,20 @@ export function mountSolitaire(element){
   get ready(){return deckReady;},get stock(){return stock.length;},get waste(){return waste.length;},get moves(){return moves;},
   get rewindsLeft(){return rewindsLeft;},get shufflesLeft(){return shufflesLeft;},
   get state(){return snapshot();},get drawCount(){return drawCount;},get historyLength(){return history.length;},
-  get hud(){return hud();},
+  get hud(){return hud();},get milliseconds(){tickClock();return activeMs;},
+  raceReplay(run,resumeRace=false){if(!validReplay(run))return false;if(resumeRace&&ghostId===run.id)return true;archiveRecording();recording=null;seed=run.seed>>>0;drawCount=run.drawCount;elapsed=0;activeMs=0;ghostId=run.id;dealKind='Ghost';winRecorded=false;deal();applySnapshot(run.initial);initial=snapshot();startRecording();layout(true);updateBar();return true;},
   hint,playHint,rewind,timeReverse,surprise,shuffle:doMagicShuffle,newGame,restart,autoFinish,save:saveGame
  };
  const resize=new ResizeObserver(()=>{if(!dealing)layout(true);});resize.observe(board);
  addEventListener('game-settings',()=>layout(true),{signal});
- document.addEventListener('visibilitychange',()=>{if(document.hidden){stopDeal();stopAuto();saveGame();}},{signal});
+ document.addEventListener('visibilitychange',()=>{lastClock=performance.now();if(document.hidden){stopDeal();stopAuto();saveGame();}},{signal});
  document.addEventListener('freeze',saveGame,{signal});
  addEventListener('pagehide',saveGame,{signal});
  addEventListener('game-before-update',()=>{stopAuto();saveGame();},{signal});
  const resumed=resume();if(!resumed)newGame('Classic',1,false);
  {const generation=deckGeneration;deckReadyPromise.then(()=>{if(generation===deckGeneration&&board.isConnected&&!signal.aborted)animateDeal(resumed);});}
- const clock=setInterval(()=>{if(deckReady&&!won&&!document.hidden){elapsed++;updateBar(false);if(elapsed%5===0)saveGame();}},1000);
+ let publishedSecond=elapsed;
+ const clock=setInterval(()=>{tickClock();if(elapsed!==publishedSecond){publishedSecond=elapsed;updateBar(false);if(elapsed%5===0)saveGame();}},250);
  deckReadyPromise.then(hideLoader);
  return ()=>{saveGame();stopDeal();stopAuto();clearInterval(clock);resize.disconnect();lifecycle.abort();removeEventListener('pointermove',onPointerMove);removeEventListener('pointerup',onPointerUp);removeEventListener('pointercancel',onPointerUp);drag=null;document.getElementById('rewindWash')?.remove();};
 }

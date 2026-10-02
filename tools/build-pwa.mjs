@@ -11,7 +11,7 @@ for(const [name,html]of built)await writeFile(new URL(name,out),html.replace(/(<
 for(const name of ['games/solitaire/index.html','games/solitaire/statistics.html','games/uno/index.html'])await writeFile(new URL(name,out),await readFile(new URL('index.html',out)));
 const source=await readFile(new URL('sw.js',root),'utf8');
 const previous=JSON.parse(source.match(/const FILES=(\[[^;]+\]);/)[1]);
-const files=[...new Set([...previous.filter(name=>!name.includes('/fonts/')&&!/^games\/.*(?:\/|\.html)$/.test(name)), 'games/uno/uno.js',...bundles])];
+const files=[...new Set([...previous.filter(name=>!name.includes('/fonts/')&&!/^games\/.*(?:\/|\.html)$/.test(name)), 'games/uno/uno.js','games/solitaire/replays.js',...bundles])];
 const hash=createHash('sha256');
 for(const name of files){hash.update(name);hash.update(await readFile(new URL(name.endsWith('/')||name==='./'?name+'index.html':name,out)));}
 const version='solitaire-friends-react-'+hash.digest('hex').slice(0,12);

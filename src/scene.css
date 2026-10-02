@@ -89,3 +89,19 @@ html.reduce-motion *,html.reduce-motion *:before,html.reduce-motion *:after{anim
 .player-greeting{top:auto;bottom:calc(env(safe-area-inset-bottom) + 115px)}
 @media(orientation:landscape) and (max-height:550px){.home-player{margin-top:2px;font-size:14px}.home-player .edit-name{width:48px;height:48px}.title-logo{max-height:calc(100% - 125px)}.play-top .game-select{flex-direction:column;gap:2px}.player-greeting{bottom:75px}}
 .app-storage{display:flex;flex-direction:column;gap:14px;padding:12px 0}.app-storage>.scene-button{justify-content:flex-start;min-height:58px;padding:14px 18px;background:#ffffff0b}.app-storage>.scene-button span{font-size:17px}
+.ghost-race{grid-template-rows:62px 24px minmax(0,1fr) 36px 0}
+.ghost-race.ghost-controls-shown{grid-template-rows:62px 24px minmax(0,1fr) 36px 78px}
+.ghost-tables{display:grid;grid-template-rows:minmax(0,1fr) auto;gap:8px}
+.ghost-panel{border-top:1px solid #ffe1a340;padding:4px 8px;background:#062c2450;min-height:0}
+.ghost-panel>header{display:flex;align-items:center;gap:8px;font-size:12px;min-height:40px}
+.ghost-panel>header>div{display:flex;flex-direction:column;flex:1;gap:3px}
+.ghost-panel>header strong{color:#ffe1a3}
+.ghost-panel>header span{color:#c3d9cc;font-size:10px}
+.ghost-panel button{min-height:44px;padding:8px;border:1px solid #ffffff30;border-radius:12px;background:#ffffff0b;color:#ffe8ce;font-size:11px}
+.ghost-panel svg{display:block;width:100%;max-height:190px;margin:auto}
+.ghost-controls-hidden .play-dock{transform:translateY(110%);visibility:hidden;pointer-events:none}
+.ghost-race .play-dock{transition:transform .25s ease,visibility .25s}
+.ghost-choices{display:flex;flex-direction:column;gap:12px}
+.ghost-choices button{display:flex;flex-direction:column;gap:6px;align-items:flex-start;text-align:left;padding:16px;min-height:64px;border:1px solid #ffe1a340;border-radius:18px;background:#ffffff0c;color:#fff1de}
+.ghost-choices button span{font-size:12px;color:#d9c4d8}
+@media(orientation:landscape) and (max-height:550px){.ghost-race{grid-template-rows:56px 20px minmax(0,1fr) 36px 0}.ghost-race.ghost-controls-shown{grid-template-rows:56px 20px minmax(0,1fr) 36px 60px}.ghost-tables{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr)}.ghost-panel{border-top:0;border-left:1px solid #ffe1a340}.ghost-panel svg{height:calc(100% - 44px);max-height:none}}
