@@ -2,7 +2,7 @@
 export function startIntroShader(canvas,{reduced=false}={}){
  const media=matchMedia('(prefers-reduced-motion: reduce)');canvas.dataset.active='false';
  if(reduced||media.matches)return ()=>{};
- let gl;try{gl=canvas.getContext('webgl2',{alpha:true,antialias:false,powerPreference:'low-power'});}catch{}
+ let gl;try{gl=canvas.getContext('webgl2',{alpha:true,premultipliedAlpha:true,antialias:false,powerPreference:'low-power'});}catch{}
  if(!gl){canvas.dataset.renderer='fallback';return ()=>{};}
  const program=buildProgram(gl);if(!program){canvas.dataset.renderer='fallback';return ()=>{};}
  canvas.dataset.renderer='webgl2';gl.useProgram(program);const vao=gl.createVertexArray();gl.bindVertexArray(vao);
@@ -125,10 +125,10 @@ vec3 chipFace(vec2 p, int idx){      // p in [-1,1] disk
   vec3 body, mark; chipColors(idx, body, mark);
   float r = length(p), ang = atan(p.y,p.x);
   vec3 col = body;
-  col = mix(col, mark, smoothstep(0.035,0.0,abs(r-0.82))*0.95);              // outer ring
+  col = mix(col, mark, (1.0-smoothstep(0.0,0.035,abs(r-0.82)))*0.95);       // outer ring
   float wedges = step(0.5, fract(ang/(2.0*PI)*8.0)) * smoothstep(0.58,0.61,r) * (1.0-smoothstep(0.79,0.82,r));
   col = mix(col, mark, wedges*0.9);                                          // edge wedges
-  col = mix(col, mark, smoothstep(0.03,0.0,abs(r-0.44))*0.5);                // inner ring
+  col = mix(col, mark, (1.0-smoothstep(0.0,0.03,abs(r-0.44)))*0.5);          // inner ring
   col = mix(col, mix(body,mark,0.35), (1.0-smoothstep(0.22,0.26,r))*0.55);   // center cap
   return col;
 }
@@ -138,8 +138,11 @@ vec3 shadeLit(vec3 base, vec3 n, vec3 v, float shiny){
   float d1=max(dot(n,l1),0.0), d2=max(dot(n,l2),0.0), d3=max(dot(n,l3),0.0);
   vec3 h1=normalize(l1+v);
   float sp=pow(max(dot(n,h1),0.0), shiny)*0.7;
-  float fres=pow(1.0-max(dot(n,v),0.0), 4.0);
-  float rim =pow(1.0-max(dot(n,v),0.0), 2.2)*0.18;
+  // Normalized dot products can round above 1 on mobile GPUs. A negative
+  // fractional-power base produces NaN and can turn the entire surface black.
+  float grazing=1.0-clamp(dot(n,v),0.0,1.0);
+  float fres=pow(grazing, 4.0);
+  float rim =pow(grazing, 2.2)*0.18;
   vec3 amb = base*mix(vec3(0.05,0.06,0.09), vec3(0.16,0.14,0.11), 0.5+0.5*n.y);
   vec3 dif = base*(d1*0.9*vec3(1.25,1.05,0.82) + d2*0.32*vec3(0.5,0.62,0.95) + d3*0.18*vec3(0.4,0.5,0.8));
   vec3 spc = sp*vec3(1.3,1.05,0.72) + fres*vec3(0.10,0.13,0.19);
@@ -235,5 +238,5 @@ void main(){
   col *= mix(0.55, 1.05, clamp(vig,0.0,1.0));
   col = (col*(2.51*col+0.03))/(col*(2.43*col+0.59)+0.14);  // filmic tone-map
   col = pow(clamp(col,0.0,1.0), vec3(1.0/2.2));
-  float alpha = hit ? 0.82 : 0.0; outColor = vec4(col*alpha, alpha);
+  float alpha = hit ? 1.0 : 0.0; outColor = vec4(col*alpha, alpha);
 }`;
