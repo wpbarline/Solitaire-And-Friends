@@ -91,7 +91,7 @@ function resume(){
     surprisesLeft=saved.surprisesLeft===0?0:1;
     rewindsLeft=Number.isInteger(saved.rewindsLeft)?Math.max(0,Math.min(3,saved.rewindsLeft)):3;
     if(document.getElementById('drawMode'))document.getElementById('drawMode').value=drawCount;
-    won=foundations.every(f=>f.length===13);if(won)showWin();layout(true);updateBar();announce('Welcome back! Your game is saved.');return true;
+    won=foundations.every(f=>f.length===13);if(won)showWin();layout(true);updateBar();announce('');return true;
   }catch{return false;}
 }
 

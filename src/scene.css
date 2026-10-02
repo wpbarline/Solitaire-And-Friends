@@ -47,3 +47,33 @@ html.reduce-motion *,html.reduce-motion *:before,html.reduce-motion *:after{anim
 @media(max-width:360px){.title-scene{grid-template-rows:58px minmax(0,1fr) 78px}}
 @media(orientation:landscape) and (max-height:550px){.title-scene{grid-template-columns:1fr;grid-template-rows:48px minmax(0,1fr) 52px}.title-stage{grid-column:1;grid-row:2;padding:0}.title-logo{max-height:calc(100% - 75px);width:auto;max-width:75vw}.title-stage .title-start{margin-top:8px}.title-stage .start-button{min-height:48px;padding:10px 26px;font-size:20px}.title-footer{grid-column:1;grid-row:3}}
 @media(prefers-reduced-motion:reduce){.title-stage .start-button:after{animation:none;display:none}}
+.player-name-form{display:flex;flex-direction:column;gap:16px;padding:10px 0}
+.player-name-form label{color:#f7dce4;font-weight:650}
+.player-name-form input{min-height:56px;width:100%;padding:12px 16px;border:1px solid #ffffff40;border-radius:16px;background:#ffffff10;color:#fff;font-size:22px}
+.player-name-form .start-button{min-width:0;margin-top:8px}
+.player-greeting{position:fixed;z-index:90;top:calc(env(safe-area-inset-top) + 100px);left:50%;transform:translateX(-50%);max-width:calc(100vw - 32px);padding:15px 24px;border-radius:22px;border:1px solid #ffe1a370;background:linear-gradient(150deg,#67445b,#30223e);box-shadow:0 10px 35px #0005;color:#ffe8c5;font-size:clamp(18px,4vw,23px);font-weight:750;text-align:center;pointer-events:none;overflow-wrap:anywhere;animation:greeting-arrive .3s ease-out}
+@keyframes greeting-arrive{from{opacity:0;transform:translate(-50%,-10px)}to{opacity:1;transform:translate(-50%,0)}}
+/* Large, tactile audio controls and a compact game header. */
+.play-top{border-bottom:1px solid #ffe1a31c;background:linear-gradient(180deg,#ffffff0d,transparent);border-radius:0 0 22px 22px}
+.play-top .home-action,.play-top .sound-mini{width:52px;height:52px;border-radius:17px;border:1px solid #ffffff20;background:linear-gradient(145deg,#ffffff12,#001c2420);color:#ffe8c5;box-shadow:inset 0 1px #ffffff18;flex-shrink:0}
+.play-top .home-action span{display:none}
+.play-top .home-action svg,.play-top .sound-mini svg{width:27px;height:27px}
+.audio-controls{display:grid;gap:18px;padding:8px 0}
+.audio-channel{padding:18px;border:1px solid #ffe1a32b;border-radius:24px;background:linear-gradient(145deg,#ffffff0c,#ffffff03)}
+.audio-channel-heading{display:flex;align-items:center;gap:10px}
+.audio-channel-heading>svg{width:26px;height:26px;color:#ffe1a3;flex-shrink:0}
+.audio-channel h3{font-size:20px;margin:0;flex:1}
+.audio-toggle{display:flex;align-items:center;justify-content:center;gap:10px;min-width:96px;min-height:54px;padding:10px;border-radius:18px;border:1px solid #ffffff35;background:#ffffff0b;color:#f6dce9;font-size:17px;font-weight:750}
+.audio-toggle[aria-checked=true]{background:#ffc0dd;color:#4c194a;border-color:#ffe1ed}
+.audio-toggle span{width:14px;height:14px;border-radius:50%;background:currentColor;opacity:.65}
+.audio-volume{display:block;margin-top:18px;font-size:15px;color:#f5dce9}
+.audio-volume>span{display:flex;justify-content:space-between;gap:12px}
+.audio-volume output{font-variant-numeric:tabular-nums;color:#ffe1a3;font-weight:750}
+.audio-volume input[type=range]{width:100%;height:56px;accent-color:#ffbedf;cursor:pointer;touch-action:pan-y}
+.audio-volume input[type=range]::-webkit-slider-thumb{width:30px;height:30px}
+@media(orientation:landscape) and (max-height:550px){.audio-controls{grid-template-columns:1fr 1fr;gap:14px}.audio-channel{padding:12px}.audio-channel h3{font-size:17px}.audio-toggle{min-width:76px}.play-top .home-action,.play-top .sound-mini{height:48px;width:48px}}
+.audio-volume input[type=range]{appearance:none;-webkit-appearance:none;background:transparent}
+.audio-volume input[type=range]::-webkit-slider-runnable-track{height:10px;border-radius:10px;background:#ffffff24;border:1px solid #ffffff30}
+.audio-volume input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:32px;height:32px;margin-top:-12px;border:3px solid #ffe7f3;border-radius:50%;background:#f5a5ce;box-shadow:0 3px 8px #0004}
+.audio-volume input[type=range]::-moz-range-track{height:10px;border-radius:10px;background:#ffffff24}
+.audio-volume input[type=range]::-moz-range-thumb{width:28px;height:28px;border:3px solid #ffe7f3;border-radius:50%;background:#f5a5ce}

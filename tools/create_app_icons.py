@@ -1,4 +1,5 @@
-"""Draw code-native app icons. Existing title and card artwork stay untouched."""
+"""Legacy generator; the current brand source is assets/app-icon.svg."""
+raise SystemExit('Run node tools/create_app_icons.mjs to render the current app icon.')
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 import json
