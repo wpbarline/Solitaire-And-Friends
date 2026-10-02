@@ -229,6 +229,6 @@ function winOverlay(){
 /* ---- go ------------------------------------------------------------------ */
 export function mountUno(element){
   el=element;active=true;newGame();
-  window.__uno={newGame};
+  window.__uno={newGame,get over(){return over;}};
   return ()=>{active=false;for(const id of timers)clearTimeout(id);timers.clear();picker=null;anim=null;el=null;delete window.__uno;};
 }

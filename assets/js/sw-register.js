@@ -5,7 +5,9 @@ for(const event of ['pointerdown','pointermove','keydown'])addEventListener(even
 function applyUpdate(){
  if(!pending||reloading||document.hidden||Date.now()-lastInput<3000)return;
  if(document.querySelector('.dragging,.time-reversing,dialog[open],.ds-overlay'))return;
- reloading=true;dispatchEvent(new Event('game-before-update'));location.reload();
+ // UNO has no persistent checkpoint yet: finish the round before upgrading.
+ if(window.__uno&&!window.__uno.over)return;
+ reloading=true;window.__gameApplyingUpdate=true;try{sessionStorage.setItem('solitaire-friends-auto-update','yes');}catch{}dispatchEvent(new Event('game-before-update'));location.reload();
 }
 if('serviceWorker' in navigator){
  let controlled=!!navigator.serviceWorker.controller;

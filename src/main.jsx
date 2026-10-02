@@ -4,6 +4,7 @@ import './scene.css';
 import '../games/uno/uno.css';
 import {startIntroShader} from './intro-shader.js';
 
+const automaticUpdate=(()=>{try{const value=sessionStorage.getItem('solitaire-friends-auto-update');sessionStorage.removeItem('solitaire-friends-auto-update');return value==='yes';}catch{return false;}})();
 const base=new URL(import.meta.env.BASE_URL,location.origin);
 const asset=path=>new URL(path,base).href;
 const load=path=>import(/* @vite-ignore */ asset(path));
@@ -67,7 +68,7 @@ function Title({audio,navigate,open,opening,onInstall}){
 function Game({audio,navigate,open}){
  const board=useRef(),[ready,setReady]=useState(false),[hud,setHud]=useState({moves:0,elapsed:0,score:0,best:0,home:0,rewindsLeft:3,shufflesLeft:1,surprisesLeft:1,historyLength:0}),[message,setMessage]=useState('Tap or drag a card'),[tucked,setTucked]=useState(false);
  useEffect(()=>{let canceled=false,cleanup,timer;const state=e=>setHud(e.detail),say=e=>setMessage(e.detail),assets=e=>setReady(e.detail.ready),hint=e=>setHud(h=>({...h,hint:e.detail}));addEventListener('solitaire-state',state);addEventListener('solitaire-message',say);addEventListener('solitaire-hint',hint);addEventListener('solitaire-assets',assets);
-  load('games/solitaire/solitaire.js').then(m=>{if(!canceled){cleanup=m.mountSolitaire(board.current);if(performance.getEntriesByType('navigation')[0]?.type==='reload'&&!window.__solitaireReloadHandled){window.__solitaireReloadHandled=true;window.__sol.restart();}}}).catch(()=>setMessage('Could not open the game. Please reopen when online.'));
+  load('games/solitaire/solitaire.js').then(m=>{if(!canceled){cleanup=m.mountSolitaire(board.current);if(performance.getEntriesByType('navigation')[0]?.type==='reload'&&!automaticUpdate&&!window.__solitaireReloadHandled){window.__solitaireReloadHandled=true;window.__sol.restart();}}}).catch(()=>setMessage('Could not open the game. Please reopen when online.'));
   const touch=()=>{setTucked(true);clearTimeout(timer);timer=setTimeout(()=>setTucked(false),1400);};board.current.addEventListener('pointerdown',touch);
   return()=>{canceled=true;cleanup?.();clearTimeout(timer);removeEventListener('solitaire-state',state);removeEventListener('solitaire-message',say);removeEventListener('solitaire-hint',hint);removeEventListener('solitaire-assets',assets);};
  },[]);
@@ -97,7 +98,7 @@ function App(){
  useEffect(()=>{history.replaceState({},'',base.href);},[]);
  useEffect(()=>{
   if(screen==='home')return;
-  const warn=e=>{e.preventDefault();e.returnValue='';};
+  const warn=e=>{if(window.__gameApplyingUpdate)return;e.preventDefault();e.returnValue='';};
   addEventListener('beforeunload',warn);return()=>removeEventListener('beforeunload',warn);
  },[screen]);
  useEffect(()=>{
