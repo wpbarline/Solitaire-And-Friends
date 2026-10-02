@@ -17,3 +17,7 @@ Baseline: `mansfieldplumbing/arlinearcade`, cloned October 1, 2026. This checkou
 - Keep the vanilla HTML/CSS/JavaScript structure unless there is a concrete need for a change. Keep mobile and this slow Windows laptop usable.
 - License every recorded sound individually. Prefer CC0/public-domain card recordings; store exact source, author, license, retrieval date, and hash. Do not copy audio or graphics from Google Play competitors.
 - Save history in Git. Changes to the upstream site require separate authorization; review changes locally before publishing a game release.
+
+## Development freeze — October 1, 2026
+
+Scott requested committing and freezing this version. Do not change or deploy the game further until he explicitly resumes development. Published gameplay is release b90ed18; later freeze commits preserve tests, documentation and inactive audio candidates. See FREEZE.md for the handoff.
