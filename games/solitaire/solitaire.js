@@ -9,6 +9,7 @@ import sfx from '../../assets/js/sfx.js';
 import { snapshot as abSnapshot, restore as abRestore, magicShuffle } from './abilities.js';
 import {hints, safeFoundation, validSnapshot} from './rules.js';
 import {seededRandom, shuffled, dailySeed} from '../../assets/js/game-primitives.js';
+import {createCardVisual,prepareBack} from './card-visuals.js';
 import {preferences} from '../../assets/js/preferences.js';
 
 const SUITS = [{ch:'♠',color:'black'},{ch:'♥',color:'red'},{ch:'♦',color:'red'},{ch:'♣',color:'black'}];
@@ -28,6 +29,7 @@ let seed=0,drawCount=1,elapsed=0,initial=null,autoTimer=null,dealKind='Classic',
 let currentHint=null,hintIndex=0;
 let reversing=false;
 let checkpointSequence=0,surprisesLeft=1;
+let deckReady=false,deckGeneration=0,deckReadyPromise=Promise.resolve();
 let dealing=false,dealFrame=0,dealTimer=0,dealSounds=[];
 function stopDeal(){cancelAnimationFrame(dealFrame);clearTimeout(dealTimer);dealSounds.forEach(clearTimeout);dealSounds=[];dealing=false;elMap?.forEach(e=>e.style.transitionDelay='');board?.classList.remove('dealing');}
 let stats={played:0,wins:0,bestMoves:null,bestTime:null,highScores:[]};
@@ -46,7 +48,7 @@ function hint(){
   if(reversing)return;
   stopAuto();const choices=hints({stock,waste,foundations,tableau});const wasHint=!!currentHint;clearHint();if(!wasHint)hintIndex=0;const option=choices[hintIndex++%choices.length];
   if(!option){announce('No moves found among the visible cards. Try Undo or a new deal.');return;}
-  slotEl[option.to]?.classList.add('hinted');
+  sfx.mallet('hint');slotEl[option.to]?.classList.add('hinted');
   if(option.kind==='stock'){(stock.length?elMap.get(topOf(stock).id):slotEl.stock).classList.add('hinted');announce(stock.length?'Tap the stock to draw '+drawCount+' card'+(drawCount===1?'':'s')+'.':'Tap the empty stock to turn the waste over.');}
   else{const card=cardsById.get(option.card);elMap.get(card.id).classList.add('hinted');announce('Move '+RANKS[card.rank]+SUITS[card.suit].ch+' to '+(option.kind==='foundation'?'its foundation.':'column '+(Number(option.to[1])+1)+'.'));}
   currentHint=option;document.getElementById('playHint')?.removeAttribute('hidden');updateBar(false);
@@ -65,7 +67,7 @@ function newGame(kind='Classic',mode=drawCount,audible=true){
   if(reversing)return;
   dealKind=kind;seed=kind==='Daily'?dailySeed():Math.floor(Math.random()*4294967296);
   drawCount=[1,3].includes(Number(mode))?Number(mode):1;
-  elapsed=0;winRecorded=false;if(audible){sfx.unlock();sfx.shuffle();}deal();if(audible)animateDeal();initial=snapshot();stats.played++;saveStats();saveGame();
+  elapsed=0;winRecorded=false;if(audible){sfx.unlock();sfx.shuffle();}deal();if(audible){const generation=deckGeneration;deckReadyPromise.then(()=>{if(generation===deckGeneration&&board.isConnected)animateDeal();});}initial=snapshot();stats.played++;saveStats();saveGame();
   announce(kind==='Daily'?"Today's shared deal. Winning is not guaranteed.":'A fresh deal. Have fun!');
 }
 function restart(){
@@ -122,13 +124,14 @@ function deal(){
     const e=document.createElement('div'); e.className='card down'; e._s='d'; e.dataset.id=card.id;
     e.addEventListener('pointerdown', ev=>onPointerDown(ev, card));
     e.setAttribute('role','button');e.tabIndex=0;
+    e._visualReady=createCardVisual(e,card,DECK_PATH+SUIT_NAME[card.suit]+'_'+card.rank+'.png');
     e.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();onClick(card);}});
     board.appendChild(e); elMap.set(card.id,e);
   }
   slotEl.stock.addEventListener('click', drawStock);
   slotEl.stock.setAttribute('role','button');slotEl.stock.tabIndex=0;slotEl.stock.setAttribute('aria-label','Draw cards or recycle stock');
   slotEl.stock.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();drawStock();}});
-  hideWin(); layout(true); updateBar();
+  hideWin(); layout(true); updateBar();prepareDeck();
 }
 
 /* ---- rules --------------------------------------------------------------- */
@@ -227,6 +230,7 @@ function checkWin(){ if(foundations.every(f=>f.length===13)){
     stats.wins++;stats.bestMoves=stats.bestMoves===null?moves:Math.min(stats.bestMoves,moves);
     stats.bestTime=stats.bestTime===null?elapsed:Math.min(stats.bestTime,elapsed);
     const score=Math.max(100,5200-moves*10-Math.floor(elapsed/5));
+    const previousBest=(stats.highScores||[]).filter(r=>r.draw===drawCount).reduce((n,r)=>Math.max(n,r.score),0);if(previousBest>0&&score>previousBest)sfx.best();
     stats.highScores=[...(Array.isArray(stats.highScores)?stats.highScores:[]),{score,moves,seconds:elapsed,draw:drawCount,kind:dealKind,assisted:shufflesLeft===0||surprisesLeft===0,date:new Date().toISOString()}].sort((a,b)=>b.score-a.score).slice(0,20);
     winRecorded=true;saveStats();
   }
@@ -243,7 +247,7 @@ function pushHistory(){
   history.push(abSnapshot({stock, waste, foundations, tableau, moves}));
 }
 function rewind(){
-  if(!history.length||reversing) return;stopAuto();clearHint();won=false;hideWin();
+  if(!history.length||reversing) return;stopDeal();stopAuto();clearHint();won=false;hideWin();
   const s = abRestore(history.pop(), cardsById);
   stock = s.stock; waste = s.waste; foundations = s.foundations; tableau = s.tableau; moves = s.moves;
   haptic();sfx.undo();
@@ -251,7 +255,7 @@ function rewind(){
 }
 async function timeReverse(){
   if(reversing||rewindsLeft<=0||!history.length)return;
-  stopAuto();clearHint();reversing=true;rewindsLeft--;won=false;hideWin();
+  stopDeal();stopAuto();clearHint();reversing=true;sfx.mallet('reverse');rewindsLeft--;won=false;hideWin();
   const count=Math.min(3,history.length);
   board.classList.add('time-reversing');rewindWash();
   for(let i=0;i<count;i++){
@@ -267,7 +271,7 @@ function surprise(){
  const card=buried.find(c=>foundationFor(c)>=0)||buried.find(c=>tableau.some((_,col)=>canTableau(c,col)));
  if(!card){announce('No helpful buried stock card is available. Your Surprise is still yours.');return;}
  stopAuto();pushHistory();stock.splice(stock.indexOf(card),1);card.up=true;waste.push(card);surprisesLeft--;moves++;
- sfx.deal();sfx.mallet('hint');haptic();layout(false);updateBar();
+ sfx.deal();sfx.surprise();haptic();layout(false);updateBar();
  const element=elMap.get(card.id);element.classList.add('shimmer');setTimeout(()=>element.classList.remove('shimmer'),700);
  announce('Surprise! '+RANKS[card.rank]+SUITS[card.suit].ch+' is ready to play. This deal will be marked assisted.');
 }
@@ -393,7 +397,7 @@ function animateDeal(){
  board.classList.add('no-anim');
  tableau.forEach((pile,col)=>pile.forEach((card,i)=>{const e=elMap.get(card.id);e.style.transform='translate('+source.x+'px,'+source.y+'px)';e.style.transitionDelay=((col*(col+1)/2+i)*.023)+'s';}));
  void board.offsetWidth;board.classList.remove('no-anim');
- dealFrame=requestAnimationFrame(()=>{layout(false);for(let i=0;i<7;i++)dealSounds.push(setTimeout(()=>sfx.deal(),i*95));});
+ dealFrame=requestAnimationFrame(()=>{layout(false);});
  dealTimer=setTimeout(stopDeal,1100);
  });
 }
@@ -403,20 +407,8 @@ function face(e,card){
   e.setAttribute('aria-label',card.up?RANKS[card.rank]+' '+SUIT_NAME[card.suit]:'Face-down card');
   const loc=locate(card);e.tabIndex=card.up&&(loc?.type==='tableau'||(loc?.type==='waste'&&card===topOf(waste))||(loc?.type==='foundation'&&card===topOf(foundations[loc.col])))?0:-1;
   if(card.up&&loc)e.setAttribute('aria-label',e.getAttribute('aria-label')+', '+(loc.type==='tableau'?'column '+(loc.col+1):loc.type));
-  if(card.up){
-    if(e._s!=='u'){ e.classList.remove('down'); e.classList.add('up'); e._s='u'; }
-    e.classList.toggle('red', card.color==='red');
-    if(e._f!==card.id){ e.innerHTML=faceHTML(card); e._f=card.id; }
-  } else if(e._s!=='d'){
-    e.classList.add('down'); e.classList.remove('up','red'); e.innerHTML=''; e._s='d'; e._f=null;
-  }
-}
-function faceHTML(card){
-  const suit = SUIT_NAME[card.suit];
-  // Every face is a PNG now: number cards (A–10) are transparent ink rasterised from
-  // the composed SVG art; courts (J/Q/K) are the scanned figures. Inline SVG painted
-  // blank on some mobile renderers (Samsung), so we serve images everywhere.
-  return `<img class="cf" draggable="false" alt="" src="${DECK_PATH}${suit}_${card.rank}.png">`;
+  e.classList.toggle('down',!card.up);e.classList.toggle('up',card.up);e.classList.toggle('red',card.up&&card.color==='red');
+  e.dataset.pile=loc?.type||'';e.dataset.topStock=String(loc?.type==='stock'&&card===topOf(stock));
 }
 
 /* ---- win ----------------------------------------------------------------- */
@@ -443,16 +435,16 @@ function updateBar(persist=true){
 }
 
 /* ---- load screen --------------------------------------------------------- */
-// Court figures are <img>; preload them (and the chosen back) so the board never
-// flashes a half-loaded card. The composed number cards are inline SVG and need no
-// loading. Resolve on load OR error so a single missing file can't strand the user.
-function preloadDeck(){
-  const urls = [];
-  for(const s of SUIT_NAME) for(let r=1; r<=13; r++) urls.push(`${DECK_PATH}${s}_${r}.png`);
-  urls.push(`${DECK_PATH}back.jpg`);
-  const back = document.documentElement.dataset.back;
-  if(back && back !== 'blue') urls.push(`${DECK_PATH}back-${back}.jpg`);
-  return Promise.all(urls.map(u => new Promise(res => { const im = new Image(); im.onload = im.onerror = res; im.src = u; })));
+function prepareDeck(){
+ const generation=++deckGeneration;deckReady=false;board.dataset.ready='false';dispatchEvent(new CustomEvent('solitaire-assets',{detail:{ready:false}}));
+ deckReadyPromise=Promise.all([...elMap.values()].map(e=>e._visualReady).concat(prepareBack(DECK_PATH+'back'+(document.documentElement.dataset.back&&document.documentElement.dataset.back!=='blue'?'-'+document.documentElement.dataset.back:'')+'.jpg'))).then(results=>{
+  if(generation!==deckGeneration||!board.isConnected)return;
+  deckReady=true;board.dataset.ready='true';board.classList.toggle('back-failed',!results.at(-1).ok);const failed=results.filter(r=>!r.ok).length;
+  dispatchEvent(new CustomEvent('solitaire-assets',{detail:{ready:true,failed}}));
+  if(failed)announce('Some artwork could not load. Readable rank and suit cards are available; your game is safe.');
+  return results;
+ });
+ return deckReadyPromise;
 }
 function hideLoader(){
   const el = document.getElementById('solLoad');
@@ -464,7 +456,7 @@ export function mountSolitaire(element){
  board=element;
  const lifecycle=new AbortController(),signal=lifecycle.signal;
  window.__sol={
-  get stock(){return stock.length;},get waste(){return waste.length;},get moves(){return moves;},
+  get ready(){return deckReady;},get stock(){return stock.length;},get waste(){return waste.length;},get moves(){return moves;},
   get rewindsLeft(){return rewindsLeft;},get shufflesLeft(){return shufflesLeft;},
   get state(){return snapshot();},get drawCount(){return drawCount;},get historyLength(){return history.length;},
   get hud(){return hud();},
@@ -472,12 +464,13 @@ export function mountSolitaire(element){
  };
  const resize=new ResizeObserver(()=>{if(!dealing)layout(true);});resize.observe(board);
  addEventListener('game-settings',()=>layout(true),{signal});
- document.addEventListener('visibilitychange',()=>{if(document.hidden){stopAuto();saveGame();}},{signal});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden){stopDeal();stopAuto();saveGame();}},{signal});
  document.addEventListener('freeze',saveGame,{signal});
  addEventListener('pagehide',saveGame,{signal});
  addEventListener('game-before-update',()=>{stopAuto();saveGame();},{signal});
- if(!resume()){newGame('Classic',1,false);animateDeal();}
- const clock=setInterval(()=>{if(!won&&!document.hidden){elapsed++;updateBar(false);if(elapsed%5===0)saveGame();}},1000);
- preloadDeck().then(hideLoader);
+ const resumed=resume();if(!resumed)newGame('Classic',1,false);
+ if(!resumed){const generation=deckGeneration;deckReadyPromise.then(()=>{if(generation===deckGeneration&&board.isConnected&&!signal.aborted)animateDeal();});}
+ const clock=setInterval(()=>{if(deckReady&&!won&&!document.hidden){elapsed++;updateBar(false);if(elapsed%5===0)saveGame();}},1000);
+ deckReadyPromise.then(hideLoader);
  return ()=>{saveGame();stopDeal();stopAuto();clearInterval(clock);resize.disconnect();lifecycle.abort();removeEventListener('pointermove',onPointerMove);removeEventListener('pointerup',onPointerUp);removeEventListener('pointercancel',onPointerUp);drag=null;document.getElementById('rewindWash')?.remove();};
 }

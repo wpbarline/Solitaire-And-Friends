@@ -4,7 +4,7 @@ const out=new URL('../dist/',import.meta.url),root=new URL('../',import.meta.url
 const entries=['index.html','games/solitaire/index.html','games/solitaire/statistics.html'];
 const built=new Map(await Promise.all(entries.map(async name=>[name,await readFile(new URL(name,out),'utf8')])));
 const bundles=(await readdir(new URL('assets/',out))).map(name=>'assets/'+name);
-for(const directory of ['assets','styles','games'])await cp(new URL(directory+'/',root),new URL(directory+'/',out),{recursive:true});
+for(const directory of ['assets','styles','games'])await cp(new URL(directory+'/',root),new URL(directory+'/',out),{recursive:true,filter:source=>!source.replaceAll('\\','/').includes('/audio/candidates')});
 for(const name of ['manifest.webmanifest'])await cp(new URL(name,root),new URL(name,out));
 for(const [name,html]of built)await writeFile(new URL(name,out),html.replace(/(<link[^>]*rel="manifest"[^>]*href=")[^"]+/, '$1/Solitaire-And-Friends/manifest.webmanifest'));
 const source=await readFile(new URL('sw.js',root),'utf8');

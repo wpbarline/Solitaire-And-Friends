@@ -1,0 +1,98 @@
+[
+  {
+    "file": "floraphonic-playful-casino-slot-machine-bonus-1-183918.mp3",
+    "sha256": "06099c05672b4a018ff06dce5ff4dd1e53240ec78bdb8096900ec634edcc8282",
+    "seconds": 4.152,
+    "sampleRate": 48000,
+    "peak": 0.9457,
+    "status": "Verified for integration in this game; original excluded from distribution",
+    "creator": "floraphonic",
+    "source": "https://pixabay.com/sound-effects/film-special-effects-playful-casino-slot-machine-bonus-1-183918/",
+    "license": "Pixabay Content License",
+    "terms": "https://pixabay.com/service/terms/",
+    "attribution": "Not required; credited voluntarily",
+    "production": "surprise-bonus.ogg",
+    "edits": "Mono, peak .65, 8ms edge fades; production cue gain separately restrained.",
+    "productionSha256": "ea1e466e3eef6abcea25fb317aaf58358dd6a1d135d3e6a3a0578ce1d61030e5"
+  },
+  {
+    "file": "freesound_community-ascending-harp-40490.mp3",
+    "sha256": "13c6187f15057be654afcc1b11e8865bc2ca5f1224fae5d3cf81e6786cf1ca59",
+    "seconds": 8.976,
+    "sampleRate": 24000,
+    "peak": 0.8776,
+    "status": "archived; source/license not independently verified; not used"
+  },
+  {
+    "file": "freesound_community-boings_jews-harp-7153.mp3",
+    "sha256": "b76e9efc1a04aa645d04eedeeeff89e1a87050c58aa9b2fd3796936869f14e22",
+    "seconds": 10.371,
+    "sampleRate": 44100,
+    "peak": 0.2371,
+    "status": "archived; source/license not independently verified; not used"
+  },
+  {
+    "file": "freesound_community-harp-flourish-6251.mp3",
+    "sha256": "bf8e37f72396a6149b499eaa1450564735129579c9380789283bd132b555ff9b",
+    "seconds": 2.592,
+    "sampleRate": 24000,
+    "peak": 0.4197,
+    "status": "archived; source/license not independently verified; not used"
+  },
+  {
+    "file": "freesound_community-harp-glissando-down-28106.mp3",
+    "sha256": "6a6a995d8de2e46d82fc1f2dfb149b7c20242c406973646949d5b37f6f0011fc",
+    "seconds": 44.136,
+    "sampleRate": 24000,
+    "peak": 0.9303,
+    "status": "archived; source/license not independently verified; not used"
+  },
+  {
+    "file": "freesound_community-harp-glissando-down-69334.mp3",
+    "sha256": "65d34ec4d96b04fb24d4ba9b27cb5c45167e018bd09abb1b6763ed16b1d25cd1",
+    "seconds": 19.248,
+    "sampleRate": 24000,
+    "peak": 0.2872,
+    "status": "archived; source/license not independently verified; not used"
+  },
+  {
+    "file": "freesound_community-harp-motif2-36586.mp3",
+    "sha256": "eb7c366064e6bea6ab56472dbe446f836887c14a209d80532835fadc34af416e",
+    "seconds": 4.848,
+    "sampleRate": 24000,
+    "peak": 0.4876,
+    "status": "archived; source/license not independently verified; not used"
+  },
+  {
+    "file": "oxidvideos-shuffling-deck-of-cards-522518.mp3",
+    "sha256": "48320fb89f9d5bd21bbc02e848f1e8af9fc8733c0eaf58ecd9d5b99511fe5032",
+    "seconds": 0.648,
+    "sampleRate": 48000,
+    "peak": 1.0198,
+    "status": "Verified for integration in this game; original excluded from distribution",
+    "creator": "OxidVideos",
+    "source": "https://pixabay.com/sound-effects/film-special-effects-shuffling-deck-of-cards-522518/",
+    "license": "Pixabay Content License",
+    "terms": "https://pixabay.com/service/terms/",
+    "attribution": "Not required; credited voluntarily",
+    "production": "card-shuffle.wav",
+    "edits": "Mono, peak .65, 8ms edge fades; production cue gain separately restrained.",
+    "productionSha256": "3db26d9692067923f16744d9bdc4ef63827e7a507c7ed0dc7973a334ea3cea37"
+  },
+  {
+    "file": "oxidvideos-taking-playing-card-522520.mp3",
+    "sha256": "8f7ee00b651b1e2aea89d191d8a01d03697b283bb667b440a939e877d6ebaef6",
+    "seconds": 0.624,
+    "sampleRate": 48000,
+    "peak": 1.0449,
+    "status": "Verified for integration in this game; original excluded from distribution",
+    "creator": "OxidVideos",
+    "source": "https://pixabay.com/sound-effects/film-special-effects-taking-playing-card-522520/",
+    "license": "Pixabay Content License",
+    "terms": "https://pixabay.com/service/terms/",
+    "attribution": "Not required; credited voluntarily",
+    "production": "card-contact.wav",
+    "edits": "Mono, peak .65, 8ms edge fades; production cue gain separately restrained.",
+    "productionSha256": "6c4ee1805d70dab0c322b640e32f907a028e6932723055ac5af6fd52ebf1ea14"
+  }
+]

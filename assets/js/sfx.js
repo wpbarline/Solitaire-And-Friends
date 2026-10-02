@@ -1,8 +1,16 @@
 import {preferences,setPreference} from './preferences.js';
 // Recorded card and interface cues. Each requested cue waits for its own decode;
 // concurrent flip/place cues never suppress one another.
+let gestureSeen=false;for(const type of ['pointerdown','keydown'])addEventListener(type,e=>{if(e.isTrusted)gestureSeen=true;},{passive:true});
 let ctx,master,compressor;const buffers=new Map(),bytes=new Map(),decoding=new Map(),voices=new Set();
-const names=['deal-1.wav','deal-2.wav','deal-3.wav','shuffle.wav','tap.ogg','reward.ogg','tada.ogg'];
+const cues={
+ launch:{file:'launch-chime.wav',gain:.85,bus:'UI',duck:1100},open:{file:'menu-open.wav',gain:.6,bus:'UI'},close:{file:'menu-close.wav',gain:.5,bus:'UI'},
+ hint:{file:'hint-chime.wav',gain:.65,bus:'UI'},reverse:{file:'reverse-chime.wav',gain:.6,bus:'UI',duck:950},tap:{file:'tap-chime.wav',gain:.4,bus:'UI'},
+ surprise:{file:'surprise-bonus.ogg',gain:.45,bus:'Rewards',duck:4300},best:{file:'hint-chime.wav',gain:.4,bus:'Rewards',duck:1000},
+ shuffle:{file:'card-shuffle.wav',gain:.5,bus:'Cards'},win:{file:'tada.ogg',gain:.65,bus:'Rewards',duck:1500}
+};
+const names=[...new Set(['card-contact.wav','tap.ogg','reward.ogg',...Object.values(cues).map(c=>c.file)])];
+const buses=new Map();const busTrim={Cards:1,UI:.85,Rewards:.85};
 function ac(){
  if(!ctx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;
  ctx=new AC();master=ctx.createGain();master.gain.value=.9;
@@ -32,46 +40,39 @@ export async function ready(){const c=ac();if(!c)return;await Promise.all(names.
 export function isMuted(){return !preferences.effects;}
 export function setMuted(value){setPreference('effects',!value);}
 export function toggleMute(){setMuted(!isMuted());return isMuted();}
-async function play(name,{volume=1,rate=1,delay=0}={}){
- if(isMuted()||document.hidden||!ac())return;
+async function play(name,{volume=1,rate=1,delay=0,bus='Cards',event=name}={}){
+ if(isMuted()||document.hidden||(!navigator.userActivation?.hasBeenActive&&!gestureSeen&&ctx?.state!=='running')||!ac())return;
  const started=performance.now();const resumed=unlock();
  try{const b=await decode(name);await resumed;
  if(isMuted()||document.hidden||performance.now()-started>5000)return;
  if(voices.size>=8){const oldest=voices.values().next().value;oldest.stop();}
  const c=ac(),source=c.createBufferSource(),gain=c.createGain();source.buffer=b;source.playbackRate.value=rate;
  gain.gain.value=Math.min(1,preferences.effectsVolume)*volume;
- source.connect(gain);gain.connect(master);voices.add(source);
+ if(!buses.has(bus)){const node=c.createGain();node.gain.value=busTrim[bus]||1;node.connect(master);buses.set(bus,node);}
+ source.connect(gain);gain.connect(buses.get(bus));voices.add(source);
  source.onended=()=>{voices.delete(source);source.disconnect();gain.disconnect();};
  source.start(c.currentTime+delay);
- dispatchEvent(new CustomEvent('game-audio-cue',{detail:{name}}));
+ dispatchEvent(new CustomEvent('game-audio-cue',{detail:{name,event,bus}}));
  }catch(e){dispatchEvent(new CustomEvent('game-audio-error',{detail:e.message}));}
 }
-let variant=0;
-export const deal=()=>play('deal-'+(variant++%3+1)+'.wav');
-export const flip=()=>play('deal-3.wav',{volume:.8,rate:1.07});
-export const pickup=()=>play('deal-1.wav',{volume:.6,rate:1.1});
-export const place=()=>play('deal-2.wav',{rate:.97+Math.random()*.06});
-export const foundation=()=>{place();return play('reward.ogg',{volume:.65,delay:.08});};
-export const invalid=()=>play('tap.ogg',{volume:.3,rate:.8});
-export const shuffle=()=>play('shuffle.wav');
-export const win=()=>{dispatchEvent(new CustomEvent('game-music-duck',{detail:1400}));return play('tada.ogg');};
-export async function mallet(kind='tap'){
- if(isMuted()||!ac())return;await unlock();const c=ac();
- const phrases={tap:[880],open:[659,880],close:[880,659],hint:[1047,1319],reverse:[1319,1047,784]};
- const notes=phrases[kind]||phrases.tap;
- notes.forEach((f,i)=>{for(const [harmonic,level] of [[1,.13],[2.76,.025],[5.4,.009]]){
- const o=c.createOscillator(),g=c.createGain(),t=c.currentTime+i*.055;o.type='sine';o.frequency.value=f*harmonic;
- g.gain.setValueAtTime(.00001,t);g.gain.exponentialRampToValueAtTime(level*preferences.effectsVolume+.00001,t+.004);g.gain.exponentialRampToValueAtTime(.00001,t+.28);
- o.connect(g);g.connect(master);o.start(t);o.stop(t+.3);o.onended=()=>{o.disconnect();g.disconnect();};
- }});
- dispatchEvent(new CustomEvent('game-audio-cue',{detail:{name:'mallet-'+kind}}));
-}
+export function emit(event){const cue=cues[event];if(!cue)return Promise.resolve();if(cue.duck&&!isMuted())dispatchEvent(new CustomEvent('game-music-duck',{detail:cue.duck}));return play(cue.file,{volume:cue.gain,bus:cue.bus,event});}
+export const deal=()=>play('card-contact.wav',{volume:.38,rate:.98+Math.random()*.04,event:'deal'});
+export const flip=()=>play('card-contact.wav',{volume:.32,rate:1.08,event:'flip'});
+export const pickup=()=>play('card-contact.wav',{volume:.3,rate:1.03,event:'pickup'});
+export const place=()=>play('card-contact.wav',{volume:.4,rate:.96+Math.random()*.04,event:'place'});
+export const foundation=()=>{place();return play('tap-chime.wav',{volume:.18,bus:'Rewards',delay:.08,event:'foundation'});};
+export const invalid=()=>play('tap.ogg',{volume:.16,rate:.8,bus:'UI',event:'invalid'});
+export const shuffle=()=>emit('shuffle');
+export const win=()=>emit('win');
+export const launch=()=>emit('launch');
+export const surprise=()=>emit('surprise');
+export const best=()=>emit('best');
+export const mallet=kind=>emit(kind);
 export async function undo(reverse=false){
- if(isMuted())return;unlock();const source=await decode('deal-2.wav');
+ if(isMuted())return;unlock();let source;try{source=await decode('card-contact.wav');}catch(e){dispatchEvent(new CustomEvent('game-audio-error',{detail:e.message}));return;}
  if(!buffers.has('card-return')){const b=ac().createBuffer(source.numberOfChannels,source.length,source.sampleRate);
  for(let channel=0;channel<source.numberOfChannels;channel++){const from=source.getChannelData(channel),to=b.getChannelData(channel);for(let i=0;i<source.length;i++)to[i]=from[source.length-1-i];}buffers.set('card-return',b);}
- play('card-return',{rate:reverse?.85:1});
- if(reverse)mallet('reverse');
+ play('card-return',{volume:.35,rate:reverse?.85:1,event:'undo'});
 }
 export const tap=()=>mallet('tap');
-export default {unlock,context,ready,toggleMute,isMuted,setMuted,deal,flip,pickup,place,foundation,invalid,shuffle,win,tap,undo,mallet};
+export default {unlock,context,ready,toggleMute,isMuted,setMuted,deal,flip,pickup,place,foundation,invalid,shuffle,win,launch,surprise,best,emit,tap,undo,mallet};

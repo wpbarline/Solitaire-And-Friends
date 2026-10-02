@@ -21,3 +21,9 @@ Baseline: `mansfieldplumbing/arlinearcade`, cloned October 1, 2026. This checkou
 ## Development freeze — October 1, 2026
 
 Scott requested committing and freezing this version. Do not change or deploy the game further until he explicitly resumes development. Published gameplay is release b90ed18; later freeze commits preserve tests, documentation and inactive audio candidates. See FREEZE.md for the handoff.
+
+## Resumed focused 2D polish
+
+Scott explicitly resumed development after the freeze. Fix renderer/loading, bounded intro, phone interaction and audio; preserve artwork, rules, scoring and saves. Build and verify locally. Do not deploy this pass automatically. Work on polish/2d-production.
+
+Scott subsequently explicitly authorized continuing, committing and publishing this verified pass to GitHub Pages. That authorization supersedes the local-only deployment restriction above.

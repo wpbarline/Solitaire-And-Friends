@@ -11,3 +11,6 @@ tools/.test-profile/
 tools/references/
 
 tools/.test-react*/
+
+# Licensed download masters are local archival material, not standalone distribution.
+assets/audio/candidates/scott/

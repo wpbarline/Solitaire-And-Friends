@@ -1,64 +1,8 @@
-/* Klondike Solitaire — Arline Arcade. CSS-drawn cards on the gold-and-felt
-   theme from app.css. Cards are absolutely positioned; moving = changing a
-   transform, so the CSS transition slides them. */
-
-/* ---- load screen (covers the board until the deck art is ready) ---- */
-.sol-load{
-  position:fixed; inset:0; z-index:1200; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:18px;
-  background:radial-gradient(circle at 50% 38%, #0c6b41, #053620 78%);
-  transition:opacity .45s ease; opacity:1;
-}
-.sol-load.gone{ opacity:0; pointer-events:none }
-.sol-load-logo{ width:min(58vw,260px); height:auto; filter:drop-shadow(0 6px 18px rgba(0,0,0,.5)) }
-.sol-load-spinner{
-  width:46px; height:46px; border-radius:50%;
-  border:4px solid rgba(233,195,74,.25); border-top-color:#e9c34a;
-  animation:solSpin .8s linear infinite;
-}
-.sol-load-text{ font-family:var(--mono,monospace); font-size:.86rem; letter-spacing:.06em; color:#ecd9a0; opacity:.9 }
-@keyframes solSpin{ to{ transform:rotate(360deg) } }
-@media (prefers-reduced-motion:reduce){ .sol-load-spinner{ animation:none } }
-
-.sol-bar{
-  display:flex; align-items:center; justify-content:center; gap:.6rem; flex-wrap:wrap;
-  width:100%; max-width:900px; margin:0 auto; padding:6px clamp(8px,3vw,18px) 2px;
-}
-.btn{
-  font:700 .82rem/1 var(--mono); color:var(--ink); background:var(--gold-grad);
-  border:none; border-radius:999px; padding:.6rem 1.2rem; cursor:pointer;
-  box-shadow:0 3px 10px rgba(0,0,0,.4); transition:transform .12s ease, box-shadow .12s ease;
-}
-.btn:hover{ transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,.45), 0 0 18px rgba(233,195,74,.4) }
-.btn.ghost{ background:rgba(0,0,0,.25); color:var(--gold-hi); box-shadow:inset 0 0 0 1px var(--line) }
-.moves{ font-family:var(--mono); font-size:.78rem; color:var(--paper); opacity:.85; margin-left:.3rem }
-
-/* ---- board ---- */
-.sol-bar .btn{min-height:44px;font-family:system-ui;font-size:.9rem}
-.sol-bar .candy{background:linear-gradient(#ffb9da,#dc538e);color:#3d1633;box-shadow:0 4px 0 #873761,0 7px 14px #0005}
-.sol-summary{max-width:880px;margin:12px auto 0;display:flex;justify-content:center;flex-wrap:wrap;gap:16px;color:#ffe5a2;font:14px/1.4 system-ui}
-.hint-text{min-height:44px;text-align:center;max-width:850px;margin:6px auto;padding:8px 14px;color:#fff0bf;font:16px/1.4 system-ui}
-.draw-label{color:#fff0bf;font:14px system-ui}.draw-label select{padding:9px;border-radius:12px;background:#254c44;color:#fff0bf;border:1px solid #e9c34a55}
-.hinted{outline:4px solid #ffdc69!important;outline-offset:2px;box-shadow:0 0 22px #ffd768!important}
-.more-controls{max-width:880px;width:calc(100% - 24px);margin:8px auto;border-radius:16px;background:#143c32;color:#fff0bf;padding:8px 14px;font:15px/1.5 system-ui}
-.more-controls summary{min-height:36px;padding:7px 0;cursor:pointer}.more-content{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding-top:8px}.more-controls p{margin:8px 0}
-.topbar{flex-wrap:wrap;gap:10px}.topbar a{padding:10px;min-height:44px;font:16px system-ui}
-.sol-bar{padding-top:8px}.sol-summary{font-size:15px}.sol-load-text{font-family:system-ui}
-.guided-move{display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;margin:0 12px 8px;color:#f8e5b8;font:14px/1.4 system-ui}.guided-move button{min-height:44px}.guided-move button[hidden]{display:none}
-.card.dragging{filter:brightness(1.04);box-shadow:0 14px 22px #0008,0 3px 5px #0004;cursor:grabbing}
-.card:active{cursor:grabbing}
-.board.time-reversing .card{transition:transform .32s cubic-bezier(.4,0,.2,1),box-shadow .32s;filter:sepia(.1)}
-@media(orientation:landscape) and (max-height:600px){.topbar{padding:4px 10px}.sol-bar{padding-top:2px}.sol-summary{margin-top:6px}.hint-text{margin:0;min-height:36px;padding:4px 12px}.more-controls{margin:4px auto}.board{max-width:760px}.sol-load-logo{max-height:140px;width:auto}}
-.board{ position:relative; width:100%; max-width:900px; margin:0 auto; min-height:62vh }
-.slot{
-  position:absolute; left:0; top:0; width:var(--cw,64px); height:var(--ch, calc(var(--cw,64px) * 1.5));
-  border-radius:calc(var(--cw,64px) * .1); border:2px dashed rgba(233,195,74,.26);
-  box-shadow:inset 0 0 0 1px rgba(0,0,0,.18);
-}
-.slot.stock{ cursor:pointer }
-.slot.stock::after{ content:"↻"; position:absolute; inset:0; display:grid; place-items:center; font-size:calc(var(--cw,64px)*.5); color:rgba(233,195,74,.42) }
-.slot.foundation::after{ content:attr(data-suit); position:absolute; inset:0; display:grid; place-items:center; font-size:calc(var(--cw,64px)*.55); color:rgba(233,195,74,.22) }
-
+/* Card-table presentation. Artwork is protected; wrappers and motion are local. */
+.board{position:relative;width:100%;height:100%;margin:0}
+.slot{position:absolute;left:0;top:0;width:var(--cw,64px);height:var(--ch,96px);border-radius:8px;border:1px solid #dfedb832}
+.slot.stock{cursor:pointer}.slot.stock:after{content:'↻';position:absolute;inset:0;display:grid;place-items:center;font-size:calc(var(--cw,64px)*.5);color:#deedbe40}
+.slot.foundation:after{content:attr(data-suit);position:absolute;inset:0;display:grid;place-items:center;font-size:calc(var(--cw,64px)*.55);color:#deedbe40}
 /* ---- cards ---- */
 .card{
   position:absolute; left:0; top:0; width:var(--cw,64px); height:var(--ch, calc(var(--cw,64px) * 1.5));
@@ -67,7 +11,7 @@
   border:1px solid rgba(0,0,0,.14);
   box-shadow:0 1px 2px rgba(0,0,0,.35), 0 5px 12px rgba(0,0,0,.26);
   transition:transform .26s cubic-bezier(.2,.7,.3,1), box-shadow .2s ease;
-  will-change:transform; user-select:none; -webkit-user-select:none; font-family:var(--display);
+  user-select:none; -webkit-user-select:none; font-family:var(--display);
 }
 .board.no-anim .card{ transition:none }
 .card.up{ background:#fff }
@@ -103,45 +47,11 @@ html[data-back="burgundy"] .card.down{ background-image:url(../../assets/cards/r
 .card.shake{ animation:solBad .32s }
 @keyframes solBad{ 0%,100%{ box-shadow:0 1px 2px rgba(0,0,0,.35), 0 5px 12px rgba(0,0,0,.26) } 45%{ box-shadow:0 0 0 3px var(--red), 0 6px 14px rgba(0,0,0,.4) } }
 
-/* ---- win ---- */
-.win{
-  position:fixed; inset:0; z-index:1100; display:none; place-items:center;
-  background:radial-gradient(circle at 50% 38%, rgba(6,42,26,.5), rgba(3,12,7,.86));
-  -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
-}
-.win.show{ display:grid; animation:winFade .4s ease }
-.win .panel{
-  text-align:center; padding:clamp(22px,5vw,38px) clamp(28px,6vw,52px);
-  background:linear-gradient(180deg,rgba(12,70,42,.96),rgba(6,42,26,.98)); border-radius:20px;
-  box-shadow:0 0 0 3px var(--gold-2), inset 0 0 0 2px rgba(255,240,176,.25), 0 22px 54px rgba(0,0,0,.6);
-}
-.win .panel .big{ font-size:clamp(3rem,16vw,5.5rem) }
-.win .panel h1{ font-family:var(--display); font-weight:700; font-size:clamp(2rem,8vw,3rem); margin:.2rem 0; background:var(--gold-grad); -webkit-background-clip:text; background-clip:text; color:transparent }
-.win .panel p{ color:var(--paper); margin:.2rem 0 1.3rem }
-@keyframes winFade{ from{opacity:0} to{opacity:1} }
-.confetti{ position:fixed; top:-20px; width:10px; height:14px; border-radius:2px; z-index:1099; pointer-events:none }
-@keyframes drop{ to{ transform:translateY(112vh) rotate(720deg); opacity:.25 } }
-
-.credit{ text-align:center; font-family:var(--mono); font-size:.68rem; color:var(--muted); opacity:.75; margin:12px 0 6px }
-.credit a{ color:var(--gold); text-decoration:none }
-
-@media (prefers-reduced-motion:reduce){ .card{ transition:none } }
-
-/* ---- Arline's time powers: rewind + magic shuffle pills & effects ---- */
-.sol-bar .pill{ min-height:44px; display:inline-flex; align-items:center; gap:.45rem }
-.sol-bar .pill .chip{
-  font-family:var(--mono); font-size:.66rem; font-weight:800; line-height:1;
-  color:var(--ink); background:var(--gold-grad); border-radius:999px; padding:.22rem .44rem;
-  box-shadow:0 1px 3px rgba(0,0,0,.35);
-}
-.sol-bar .pill:disabled{ opacity:.4; cursor:default; pointer-events:none; transform:none }
-.sol-bar .pill:focus-visible{ outline:2px solid var(--gold); outline-offset:2px }
-
 /* magic shuffle: brief gold shimmer washing over every face-down card */
 .card.down.shimmer{ animation:solShimmer .7s cubic-bezier(0,0,.2,1) }
 @keyframes solShimmer{
-  0%,100%{ box-shadow:0 1px 2px rgba(0,0,0,.4), 0 5px 12px rgba(0,0,0,.3); filter:none }
-  45%{ box-shadow:0 0 0 2px var(--gold-hi), 0 0 20px 5px rgba(233,195,74,.8); filter:brightness(1.25) saturate(1.15) }
+  0%,100%{ box-shadow:0 1px 2px rgba(0,0,0,.4), 0 5px 12px rgba(0,0,0,.3) }
+  45%{ box-shadow:0 0 0 2px var(--gold-hi), 0 0 20px 5px rgba(233,195,74,.8) }
 }
 
 /* rewind: ~500ms sepia + vignette wash over the whole board */
@@ -158,3 +68,11 @@ html[data-back="burgundy"] .card.down{ background-image:url(../../assets/cards/r
   .card.down.shimmer{ animation:none }
   .rewind-wash.on{ animation:none; opacity:0 }
 }
+
+.board.no-anim .card{transition:none}
+.card.down .cf,.card.down .face-fallback{visibility:hidden}
+.face-fallback{display:none;position:absolute;inset:0;padding:8%;background:#fff;color:#18202b;font:800 calc(var(--cw,64px)*.28)/1.2 system-ui;pointer-events:none}
+.face-fallback>span{display:block}.face-fallback strong{display:grid;place-items:center;height:65%;font-size:calc(var(--cw,64px)*.6)}
+.card.red .face-fallback{color:#b91635}.card.face-failed .cf{display:none}.card.face-failed.up .face-fallback{display:block}
+.board.back-failed .card.down{background-image:none;background-color:#223d70;background-size:12px 12px;background-image:repeating-linear-gradient(45deg,transparent 0 4px,#ffffff30 4px 5px)}
+.win{position:fixed;inset:0;display:none}.win.show{display:grid}

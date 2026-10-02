@@ -2,6 +2,8 @@
 
 Live: https://wpbarline.github.io/Solitaire-And-Friends/
 
+The October 1 2D polish adds stable decoded card faces with failure fallback, a bounded opening cascade, phone bottom sheets, recorded event cues and a quieter music mix. The visible shell focuses on Solitaire. See POLISH-REVIEW.md for verification and manual Android review.
+
 A React/Vite game shell with an animated title, original protected card artwork, tap/drag/guided hints, opening and fresh-deal cascades, local scores, physical card sounds, mallet interface cues, music, Undo and three Time Reverse charges. One Surprise rescue per deal can bring a useful buried stock card to the waste; assisted wins are marked.
 
 Install from Android Chrome/Edge’s Install app/Add to Home screen menu. Game state and move history checkpoint after every move and restore after closure. Offline assets install automatically; updates save the game and reload between interactions. Scores and saves stay on each device. Music starts after a user gesture; separate sound/music settings are saved.

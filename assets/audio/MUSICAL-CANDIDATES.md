@@ -6,3 +6,7 @@ Retrieved October 1, 2026. Saved at Scott’s development freeze.
 - Recorded xylophone C6, medium mallet, forte: Versilian Studios LLC’s VCSL, https://github.com/sgossner/VCSL . CC0 license preserved in VCSL-LICENSE.txt. Original: https://raw.githubusercontent.com/sgossner/VCSL/master/Idiophones/Struck%20Idiophones/Xylophone/Medium%20Mallets/Xylo_Medium_C6_ff_01_far.wav . Saved unchanged in candidates/xylophone-c6.wav, SHA-256 183d04381c44705f65c3750383f28695f4b2576311ace8fdbe567134f416ff27.
 
 Derived short cues: menu-open.wav, menu-close.wav, hint-chime.wav, reverse-chime.wav, launch-chime.wav and tap-chime.wav. Original note arrangements, pitched from the recorded sample, trimmed, mono and faded; tools/prepare_musical_audio.py reproduces them. These are audition candidates, not an approved listening selection. They do not use Candy Crush assets. No runtime audio imports or service-worker precache entries reference them.
+
+## Focused 2D polish activation
+
+The six recorded xylophone phrases are now mapped to semantic interface events; launch is separate from victory. Magic Puzzle is the current locally built soundtrack, with a 0.75 production trim that preserves the saved slider. The earlier frozen tag still has them inactive.

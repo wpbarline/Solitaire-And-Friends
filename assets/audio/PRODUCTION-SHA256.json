@@ -1,4 +1,6 @@
 {
+  "card-contact.wav": "6c4ee1805d70dab0c322b640e32f907a028e6932723055ac5af6fd52ebf1ea14",
+  "card-shuffle.wav": "3db26d9692067923f16744d9bdc4ef63827e7a507c7ed0dc7973a334ea3cea37",
   "cozy-puzzle.ogg": "afa440cb8814907b215b285a0503d39b125b6c83d9fca3f686c969107f04c7f7",
   "deal-1.wav": "43f950693c2e199174f1203c3da25a228fa100c937a40bc2abf98b07fc8355f0",
   "deal-2.wav": "7b137fc4a19dc7d8db8ffb530a411d85cdcfcc8beae4e1ffd7f9ba4bd7457eee",
@@ -12,6 +14,7 @@
   "reverse-chime.wav": "c3f6eff730296c8c136eeb95610f727c490235e4881ee6006d91daa05f008df0",
   "reward.ogg": "063564703b6094d70718a3e787a55cc9141611e4ecd6b6637f8828f79b4a8c3a",
   "shuffle.wav": "b10874fd2ecb30794f52eb5cfc2e67dac6c8c0a9bcfe8fc7a9677add37298c90",
+  "surprise-bonus.ogg": "ea1e466e3eef6abcea25fb317aaf58358dd6a1d135d3e6a3a0578ce1d61030e5",
   "tada.ogg": "88da900ec74a79fb845f2dcf2068383998833a9ee1b87a23f074924781af5700",
   "tap-chime.wav": "6607788b03c4a32d85aee54b1cc5c3f85b5c21251e0b2aafcf30e43976fc8204",
   "tap.ogg": "ccfb7fa0cccdd9faec0eb16033c732b1e308d139d80f799161495d58f7adcdb9"

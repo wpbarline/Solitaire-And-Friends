@@ -5,7 +5,7 @@ const assert=require('node:assert/strict');
  try{
   const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
   const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('http://127.0.0.1:8770/games/solitaire/');await page.waitForFunction(()=>window.__sol?.state);
+  await page.goto('http://127.0.0.1:8771/Solitaire-And-Friends/games/solitaire/');await page.waitForFunction(()=>window.__sol?.ready);
   await page.waitForFunction(()=>!document.getElementById('solLoad')||document.getElementById('solLoad').classList.contains('gone'));
   const tapCard=async id=>{const b=await page.locator(`.card[data-id="${id}"]`).boundingBox();await page.touchscreen.tap(b.x+b.width/2,b.y+12);};
   const top=await page.evaluate(()=>window.__sol.state.stock.at(-1).id);
@@ -35,18 +35,18 @@ const assert=require('node:assert/strict');
   await page.evaluate(async()=>{
    await Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>setTimeout(()=>reject(Error('Worker installation timeout')),25000))]);
    if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}));
-   const c=await caches.open('solitaire-friends-v6');
+   const c=await caches.open((await caches.keys()).find(n=>n.startsWith('solitaire-friends-react-')));
    if((await c.keys()).length<100)throw Error('Offline cache incomplete');
   });
-  await context.setOffline(true);await page.reload();await page.waitForFunction(()=>window.__sol?.state);
+  await context.setOffline(true);await page.reload();await page.waitForFunction(()=>window.__sol?.ready);
   assert.deepEqual(await page.evaluate(()=>window.__sol.state),state);
   assert.equal(await page.locator('.card img').evaluateAll(images=>images.every(i=>i.complete&&i.naturalWidth>0)),true);
   const sounds=await page.evaluate(async()=>{
    const c=new AudioContext();const result=[];
-   for(const name of ['shuffle.wav','deal-1.wav','reward.ogg','tada.ogg']){const r=await fetch('../../assets/audio/'+name);const b=await c.decodeAudioData(await r.arrayBuffer());result.push(b.duration>0);}
+   for(const name of ['card-shuffle.wav','card-contact.wav','launch-chime.wav','menu-open.wav','menu-close.wav','hint-chime.wav','reverse-chime.wav','tap-chime.wav','surprise-bonus.ogg','tada.ogg']){const r=await fetch('../../assets/audio/'+name);const b=await c.decodeAudioData(await r.arrayBuffer());result.push(b.duration>0);}
    await c.close();return result;
   });assert.ok(sounds.every(Boolean));
-  await page.goto('http://127.0.0.1:8770/');assert.match(await page.locator('.primary-play').textContent(),/Continue Solitaire/);
+  await page.goto('http://127.0.0.1:8771/Solitaire-And-Friends/');assert.match(await page.locator('#startGame').textContent(),/Continue playing/);
   await page.screenshot({path:'C:/github-projects/Solitaire-And-Friends/tools/home-phone.png',fullPage:true});
   assert.deepEqual(errors,[]);console.log('PASS: phone tap, legal drag, card conservation, full offline reload/art/audio, home.');
  }finally{await browser.close();}
