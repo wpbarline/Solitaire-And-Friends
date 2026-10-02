@@ -1,7 +1,7 @@
 {
   "name": "Solitaire and Friends",
   "short_name": "Solitaire",
-  "description": "Solitaire, FreeCell and friendly arcade games. Ad-free, no sign-ups, with the original gold card artwork.",
+  "description": "Solitaire and four-player UNO. Ad-free, no sign-ups, with the original gold card artwork.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

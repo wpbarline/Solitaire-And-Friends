@@ -8,9 +8,12 @@ import sfx from '../../assets/js/sfx.js';
 
 const COLORS = ['red','yellow','green','blue'];
 const NAMES  = ['You','Rosa','Hank','Lou'];
-let NP = 4;   // chosen on the setup screen (2–4 players)
+const NP = 4;
 
-const el = document.getElementById('uno');
+let el;
+let active=false;
+const timers=new Set();
+function later(fn,delay){const id=setTimeout(()=>{timers.delete(id);if(active)fn();},delay);timers.add(id);return id;}
 
 let deck=[], discard=[], hands=[[],[],[],[]];
 let current=0, dir=1, color=null, over=false, drew=false, busy=false, winner=-1, anim=null, started=false;
@@ -82,7 +85,7 @@ function doPlay(p, idx, from){
 }
 function scheduleTurn(){
   if(over) return;
-  if(current!==0){ busy=true; setTimeout(aiTurn, 950); }
+  if(current!==0){ busy=true; later(aiTurn, 950); }
   else { busy=false; render(); }
 }
 
@@ -105,7 +108,7 @@ function aiTurn(){
   } else {
     const dr=draw(1); if(dr.length) hands[p].push(dr[0]);
     sfx.deal(); render();
-    setTimeout(()=>{
+    later(()=>{
       if(over || current!==p) return;
       const card=dr[0];
       if(card && legal(card)){
@@ -134,7 +137,7 @@ function humanDraw(){
   render();
   const card=dr[0];
   if(!(card && legal(card))){            // nothing playable -> auto-pass
-    setTimeout(()=>{ if(current===0 && !over){ current=step(0,1); drew=false; render(); scheduleTurn(); } }, 700);
+    later(()=>{ if(current===0 && !over){ current=step(0,1); drew=false; render(); scheduleTurn(); } }, 700);
   }
 }
 function humanPass(){
@@ -159,11 +162,6 @@ function cardBack(){ return `<div class="uno-card back"><span class="pip">UNO</s
 
 function render(){
   if(!el) return;
-  if(!started){
-    el.innerHTML = setupOverlay();
-    el.querySelectorAll('.np-btn').forEach(b=> b.addEventListener('click', ()=>{ NP=+b.dataset.np; newGame(); }));
-    return;
-  }
   const opps = Array.from({length:NP-1}, (_,i)=>i+1).map(p=>`
     <div class="opp ${current===p&&!over?'active':''}" data-p="${p}">
       <div class="stack">${cardBack()}<span class="count">${hands[p].length}</span></div>
@@ -192,7 +190,7 @@ function render(){
   const handEl=el.querySelector('#hand');
   handEl && handEl.addEventListener('click', e=>{ const b=e.target.closest('.card-btn'); if(b) humanPlay(+b.dataset.idx); });
   bind('#drawBtn','click',humanDraw); bind('#drawPile','click',humanDraw); bind('#passBtn','click',humanPass);
-  if(over){ bind('#again','click', newGame); bind('#changeNp','click', ()=>{ started=false; over=false; render(); }); }
+  if(over) bind('#again','click', newGame);
   if(picker) el.querySelectorAll('.pick').forEach(b=> b.addEventListener('click', ()=>{ const cb=picker; picker=null; cb(b.dataset.col); }));
 
   if(anim){
@@ -220,23 +218,17 @@ function pickerOverlay(){
   return `<div class="overlay"><div class="panel"><h3>Pick a color</h3><div class="picks">
     ${COLORS.map(c=>`<button class="pick sc-${c}" data-col="${c}" aria-label="${c}"></button>`).join('')}</div></div></div>`;
 }
-function setupOverlay(){
-  return `<div class="overlay setup"><div class="panel"><div class="big">🎴</div>
-    <h3>Arline Arcade Uno</h3><p class="sub">How many players?</p>
-    <div class="np-picks">
-      <button class="ctl np-btn" data-np="2">2</button>
-      <button class="ctl np-btn" data-np="3">3</button>
-      <button class="ctl np-btn" data-np="4">4</button>
-    </div>
-    <p class="sub small">You vs the computer</p></div></div>`;
-}
-function newGame(){ deal(); started=true; over=false; render(); }
+function newGame(){ for(const id of timers)clearTimeout(id);timers.clear();anim=null;deal();started=true;over=false;render(); }
 function winOverlay(){
   return `<div class="overlay"><div class="panel"><div class="big">${winner===0?'🎉':'🃏'}</div>
     <h3>${winner===0?'You win!':NAMES[winner]+' wins'}</h3>
     <div class="winbtns"><button class="ctl" id="again">Play again</button>
-    <button class="ctl ghost" id="changeNp">Change players</button></div></div></div>`;
+    </div></div></div>`;
 }
 
 /* ---- go ------------------------------------------------------------------ */
-if(el){ started=false; render(); }
+export function mountUno(element){
+  el=element;active=true;newGame();
+  window.__uno={newGame};
+  return ()=>{active=false;for(const id of timers)clearTimeout(id);timers.clear();picker=null;anim=null;el=null;delete window.__uno;};
+}

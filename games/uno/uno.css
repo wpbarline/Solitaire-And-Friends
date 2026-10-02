@@ -6,6 +6,16 @@
   display:flex; flex-direction:column; min-height:calc(100svh - 56px);
 }
 
+/* The shared app owns the viewport; UNO fills its remaining board area. */
+.play-scene.uno-scene{grid-template-rows:62px minmax(0,1fr) auto}
+.uno-scene .uno-table{min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.uno-scene>p:empty{display:none}
+.uno-scene .play-top strong{font-size:clamp(12px,3vw,17px);text-align:center}
+.uno-scene .hand{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding:18px 4px 12px;max-width:100%;min-height:0}
+.uno-scene .card-btn{flex-shrink:0}
+.uno-scene .overlay{position:absolute}
+@media(prefers-reduced-motion:reduce){.uno-scene .card-btn,.uno-scene .opp{transition:none}.uno-scene .shake{animation:none}}
+
 /* ---- opponents ---- */
 .opp-row{ display:flex; justify-content:center; gap:clamp(16px,7vw,54px); flex-shrink:0; padding-top:6px }
 .opp{ display:flex; flex-direction:column; align-items:center; gap:.3rem; opacity:.85; transition:opacity .2s, transform .2s }

@@ -1,15 +1,17 @@
 import {readFile,writeFile,cp,readdir,mkdir} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 const out=new URL('../dist/',import.meta.url),root=new URL('../',import.meta.url);
-const entries=['index.html','games/solitaire/index.html','games/solitaire/statistics.html'];
+const entries=['index.html'];
 const built=new Map(await Promise.all(entries.map(async name=>[name,await readFile(new URL(name,out),'utf8')])));
 const bundles=(await readdir(new URL('assets/',out))).map(name=>'assets/'+name);
-for(const directory of ['assets','styles','games'])await cp(new URL(directory+'/',root),new URL(directory+'/',out),{recursive:true,filter:source=>!source.replaceAll('\\','/').includes('/audio/candidates')});
+for(const directory of ['assets','styles','games/solitaire','games/uno'])await cp(new URL(directory+'/',root),new URL(directory+'/',out),{recursive:true,filter:source=>!source.replaceAll('\\','/').includes('/audio/candidates')});
+await cp(new URL('index.html',out),new URL('404.html',out));
 for(const name of ['manifest.webmanifest'])await cp(new URL(name,root),new URL(name,out));
 for(const [name,html]of built)await writeFile(new URL(name,out),html.replace(/(<link[^>]*rel="manifest"[^>]*href=")[^"]+/, '$1/Solitaire-And-Friends/manifest.webmanifest'));
+for(const name of ['games/solitaire/index.html','games/solitaire/statistics.html','games/uno/index.html'])await writeFile(new URL(name,out),await readFile(new URL('index.html',out)));
 const source=await readFile(new URL('sw.js',root),'utf8');
 const previous=JSON.parse(source.match(/const FILES=(\[[^;]+\]);/)[1]);
-const files=[...new Set([...previous.filter(name=>!name.includes('/fonts/')),...bundles])];
+const files=[...new Set([...previous.filter(name=>!name.includes('/fonts/')&&!/^games\/.*(?:\/|\.html)$/.test(name)), 'games/uno/uno.js',...bundles])];
 const hash=createHash('sha256');
 for(const name of files){hash.update(name);hash.update(await readFile(new URL(name.endsWith('/')||name==='./'?name+'index.html':name,out)));}
 const version='solitaire-friends-react-'+hash.digest('hex').slice(0,12);
