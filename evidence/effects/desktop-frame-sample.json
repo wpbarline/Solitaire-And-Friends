@@ -1,0 +1,7 @@
+{
+  "device": "Desktop Edge headless; not Android hardware",
+  "frames": 89,
+  "medianMs": 16.600000000000364,
+  "p95Ms": 16.700000000000728,
+  "maxMs": 33.29999999999973
+}

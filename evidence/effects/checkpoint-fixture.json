@@ -1,0 +1,482 @@
+{
+  "version": 1,
+  "seed": 314159,
+  "drawCount": 1,
+  "elapsed": 0,
+  "initial": {
+    "stock": [
+      {
+        "id": 1,
+        "up": false
+      },
+      {
+        "id": 10,
+        "up": false
+      },
+      {
+        "id": 37,
+        "up": false
+      },
+      {
+        "id": 7,
+        "up": false
+      },
+      {
+        "id": 45,
+        "up": false
+      },
+      {
+        "id": 24,
+        "up": false
+      },
+      {
+        "id": 16,
+        "up": false
+      },
+      {
+        "id": 44,
+        "up": false
+      },
+      {
+        "id": 50,
+        "up": false
+      },
+      {
+        "id": 27,
+        "up": false
+      },
+      {
+        "id": 12,
+        "up": false
+      },
+      {
+        "id": 30,
+        "up": false
+      },
+      {
+        "id": 42,
+        "up": false
+      },
+      {
+        "id": 51,
+        "up": false
+      },
+      {
+        "id": 15,
+        "up": false
+      },
+      {
+        "id": 36,
+        "up": false
+      },
+      {
+        "id": 48,
+        "up": false
+      },
+      {
+        "id": 39,
+        "up": false
+      },
+      {
+        "id": 11,
+        "up": false
+      },
+      {
+        "id": 35,
+        "up": false
+      },
+      {
+        "id": 46,
+        "up": false
+      },
+      {
+        "id": 19,
+        "up": false
+      },
+      {
+        "id": 23,
+        "up": false
+      },
+      {
+        "id": 6,
+        "up": false
+      }
+    ],
+    "waste": [],
+    "foundations": [
+      [],
+      [],
+      [],
+      []
+    ],
+    "tableau": [
+      [
+        {
+          "id": 31,
+          "up": true
+        }
+      ],
+      [
+        {
+          "id": 25,
+          "up": false
+        },
+        {
+          "id": 8,
+          "up": true
+        }
+      ],
+      [
+        {
+          "id": 32,
+          "up": false
+        },
+        {
+          "id": 3,
+          "up": false
+        },
+        {
+          "id": 5,
+          "up": true
+        }
+      ],
+      [
+        {
+          "id": 34,
+          "up": false
+        },
+        {
+          "id": 41,
+          "up": false
+        },
+        {
+          "id": 18,
+          "up": false
+        },
+        {
+          "id": 26,
+          "up": true
+        }
+      ],
+      [
+        {
+          "id": 29,
+          "up": false
+        },
+        {
+          "id": 22,
+          "up": false
+        },
+        {
+          "id": 21,
+          "up": false
+        },
+        {
+          "id": 38,
+          "up": false
+        },
+        {
+          "id": 17,
+          "up": true
+        }
+      ],
+      [
+        {
+          "id": 0,
+          "up": false
+        },
+        {
+          "id": 20,
+          "up": false
+        },
+        {
+          "id": 28,
+          "up": false
+        },
+        {
+          "id": 4,
+          "up": false
+        },
+        {
+          "id": 2,
+          "up": false
+        },
+        {
+          "id": 9,
+          "up": true
+        }
+      ],
+      [
+        {
+          "id": 33,
+          "up": false
+        },
+        {
+          "id": 47,
+          "up": false
+        },
+        {
+          "id": 14,
+          "up": false
+        },
+        {
+          "id": 40,
+          "up": false
+        },
+        {
+          "id": 43,
+          "up": false
+        },
+        {
+          "id": 13,
+          "up": false
+        },
+        {
+          "id": 49,
+          "up": true
+        }
+      ]
+    ],
+    "moves": 0
+  },
+  "state": {
+    "stock": [
+      {
+        "id": 1,
+        "up": false
+      },
+      {
+        "id": 10,
+        "up": false
+      },
+      {
+        "id": 37,
+        "up": false
+      },
+      {
+        "id": 7,
+        "up": false
+      },
+      {
+        "id": 45,
+        "up": false
+      },
+      {
+        "id": 24,
+        "up": false
+      },
+      {
+        "id": 16,
+        "up": false
+      },
+      {
+        "id": 44,
+        "up": false
+      },
+      {
+        "id": 50,
+        "up": false
+      },
+      {
+        "id": 27,
+        "up": false
+      },
+      {
+        "id": 12,
+        "up": false
+      },
+      {
+        "id": 30,
+        "up": false
+      },
+      {
+        "id": 42,
+        "up": false
+      },
+      {
+        "id": 51,
+        "up": false
+      },
+      {
+        "id": 15,
+        "up": false
+      },
+      {
+        "id": 36,
+        "up": false
+      },
+      {
+        "id": 48,
+        "up": false
+      },
+      {
+        "id": 39,
+        "up": false
+      },
+      {
+        "id": 11,
+        "up": false
+      },
+      {
+        "id": 35,
+        "up": false
+      },
+      {
+        "id": 46,
+        "up": false
+      },
+      {
+        "id": 19,
+        "up": false
+      },
+      {
+        "id": 23,
+        "up": false
+      },
+      {
+        "id": 6,
+        "up": false
+      }
+    ],
+    "waste": [],
+    "foundations": [
+      [],
+      [],
+      [],
+      []
+    ],
+    "tableau": [
+      [
+        {
+          "id": 31,
+          "up": true
+        }
+      ],
+      [
+        {
+          "id": 25,
+          "up": false
+        },
+        {
+          "id": 8,
+          "up": true
+        }
+      ],
+      [
+        {
+          "id": 32,
+          "up": false
+        },
+        {
+          "id": 3,
+          "up": false
+        },
+        {
+          "id": 5,
+          "up": true
+        }
+      ],
+      [
+        {
+          "id": 34,
+          "up": false
+        },
+        {
+          "id": 41,
+          "up": false
+        },
+        {
+          "id": 18,
+          "up": false
+        },
+        {
+          "id": 26,
+          "up": true
+        }
+      ],
+      [
+        {
+          "id": 29,
+          "up": false
+        },
+        {
+          "id": 22,
+          "up": false
+        },
+        {
+          "id": 21,
+          "up": false
+        },
+        {
+          "id": 38,
+          "up": false
+        },
+        {
+          "id": 17,
+          "up": true
+        }
+      ],
+      [
+        {
+          "id": 0,
+          "up": false
+        },
+        {
+          "id": 20,
+          "up": false
+        },
+        {
+          "id": 28,
+          "up": false
+        },
+        {
+          "id": 4,
+          "up": false
+        },
+        {
+          "id": 2,
+          "up": false
+        },
+        {
+          "id": 9,
+          "up": true
+        }
+      ],
+      [
+        {
+          "id": 33,
+          "up": false
+        },
+        {
+          "id": 47,
+          "up": false
+        },
+        {
+          "id": 14,
+          "up": false
+        },
+        {
+          "id": 40,
+          "up": false
+        },
+        {
+          "id": 43,
+          "up": false
+        },
+        {
+          "id": 13,
+          "up": false
+        },
+        {
+          "id": 49,
+          "up": true
+        }
+      ]
+    ],
+    "moves": 0
+  },
+  "history": [],
+  "shufflesLeft": 1,
+  "rewindsLeft": 3,
+  "surprisesLeft": 1
+}

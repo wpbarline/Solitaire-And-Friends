@@ -1,6 +1,6 @@
-const {chromium}=require('C:/Users/Arline/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
-(async()=>{const browser=await chromium.launch({channel:'msedge',headless:true});try{
+(async()=>{const browser=await chromium.launch({channel:process.env.BROWSER_CHANNEL||'msedge',headless:true});try{
  for(const viewport of [{width:390,height:844},{width:844,height:390}]){
   const page=await browser.newPage({viewport,serviceWorkers:'block'}),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
@@ -32,7 +32,7 @@ const assert=require('node:assert/strict');
   },run);
   assert.deepEqual(replayChecks.before,initial);assert.deepEqual(replayChecks.draw,afterDraw);assert.deepEqual(replayChecks.undo,initial);assert.equal(replayChecks.valid,true);assert.equal(replayChecks.malformed,false);
   assert.ok(await page.locator('.ghost-panel').evaluate(e=>e.getBoundingClientRect().bottom<=innerHeight+1));
-  await page.screenshot({path:`C:/Temp/ghost-race-${viewport.width}.png`});
+  const output=require('node:path').resolve(process.env.CAPTURE_DIR||'evidence/test-output');require('node:fs').mkdirSync(output,{recursive:true});await page.screenshot({path:require('node:path').join(output,`ghost-race-${viewport.width}.png`)});
   await page.getByRole('button',{name:'Controls',exact:true}).click();assert.equal(await page.locator('.play-dock').evaluate(e=>e.inert),false);
   await page.locator('.slot.stock').press('Enter');
   const raceState=await page.evaluate(()=>window.__sol.state);

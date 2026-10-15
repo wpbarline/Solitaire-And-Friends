@@ -13,3 +13,9 @@ export function dailySeed(date=new Date()){
   let n=2166136261; for(const ch of label) n=Math.imul(n^ch.charCodeAt(0),16777619);
   return n>>>0;
 }
+// Deal entropy must not depend on how many cosmetic sound/particle RNG calls ran.
+let fallbackSeed=Date.now()>>>0;
+export function freshSeed(){
+ try{if(globalThis.crypto?.getRandomValues)return crypto.getRandomValues(new Uint32Array(1))[0];}catch{}
+ fallbackSeed=(fallbackSeed+0x6D2B79F5)>>>0;return fallbackSeed;
+}

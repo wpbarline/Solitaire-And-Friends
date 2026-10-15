@@ -1,6 +1,6 @@
-const {chromium}=require('C:/Users/Arline/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
-(async()=>{const b=await chromium.launch({channel:'msedge',headless:true});try{
+(async()=>{const b=await chromium.launch({channel:process.env.BROWSER_CHANNEL||'msedge',headless:true});try{
  for(const viewport of [{width:390,height:844},{width:844,height:390}]){
   const p=await b.newPage({viewport,serviceWorkers:'block'}),errors=[];p.on('pageerror',e=>errors.push(e.message));
   const base=process.env.GAME_URL||'http://127.0.0.1:8773/Solitaire-And-Friends/';
@@ -15,13 +15,13 @@ const assert=require('node:assert/strict');
   await p.getByRole('button',{name:'Game Select',exact:true}).click();await p.getByRole('button',{name:'Solitaire',exact:true}).click();await p.waitForFunction(()=>window.__sol?.ready);assert.equal(await p.evaluate(()=>window.__sol.moves),moves);
   await p.evaluate(()=>{window.popupCues=[];addEventListener('game-audio-cue',e=>{if(['open','close'].includes(e.detail.event))window.popupCues.push(e.detail);});});
   await p.getByRole('button',{name:'Audio',exact:true}).click();
-  await p.waitForFunction(()=>window.popupCues.some(e=>e.event==='open'&&e.name==='harp-transition.ogg'));
+  await p.waitForFunction(()=>window.popupCues.some(e=>e.event==='open'&&['menu-open.wav','menu-close.wav','tap-chime.wav'].includes(e.name)));
   const music=p.getByRole('switch',{name:'Music',exact:true});await music.click();assert.equal(await music.getAttribute('aria-checked'),'false');
   await p.getByRole('slider',{name:'Sound effects volume',exact:true}).fill('0.35');
   await p.getByRole('button',{name:'Close',exact:true}).click();await p.getByRole('dialog').waitFor({state:'hidden'});
-  await p.waitForFunction(()=>window.popupCues.some(e=>e.event==='close'&&e.name==='harp-transition.ogg'));
+  await p.waitForFunction(()=>window.popupCues.some(e=>e.event==='close'&&['menu-open.wav','menu-close.wav','tap-chime.wav'].includes(e.name)));
   await p.getByRole('button',{name:'Audio',exact:true}).click();assert.equal(await music.getAttribute('aria-checked'),'false');assert.equal(await p.getByRole('slider',{name:'Sound effects volume',exact:true}).inputValue(),'0.35');
-  await p.waitForTimeout(350);await p.screenshot({path:'C:/Temp/audio-panel-'+viewport.width+'.png'});
+  const output=require('node:path').resolve(process.env.CAPTURE_DIR||'evidence/test-output');require('node:fs').mkdirSync(output,{recursive:true});await p.waitForTimeout(350);await p.screenshot({path:require('node:path').join(output,'audio-panel-'+viewport.width+'.png')});
   await p.getByRole('button',{name:'Close',exact:true}).click();await p.getByRole('dialog').waitFor({state:'hidden'});
   p.once('dialog',d=>d.accept());await p.reload();await p.waitForFunction(()=>window.__sol?.ready);
   assert.equal(await p.locator('.player-greeting').textContent(),'Welcome back, Aunt Arline!');assert.ok(!(await p.locator('#hintText').textContent()).includes('Your game is saved'));

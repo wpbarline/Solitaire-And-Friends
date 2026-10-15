@@ -162,6 +162,7 @@ function cardBack(){ return `<div class="uno-card back"><span class="pip">UNO</s
 
 function render(){
   if(!el) return;
+  const handScroll=el.querySelector('#hand')?.scrollLeft||0;
   const opps = Array.from({length:NP-1}, (_,i)=>i+1).map(p=>`
     <div class="opp ${current===p&&!over?'active':''}" data-p="${p}">
       <div class="stack">${cardBack()}<span class="count">${hands[p].length}</span></div>
@@ -188,6 +189,7 @@ function render(){
     ${picker ? pickerOverlay() : ''}`;
 
   const handEl=el.querySelector('#hand');
+  if(handEl)handEl.scrollLeft=handScroll;
   handEl && handEl.addEventListener('click', e=>{ const b=e.target.closest('.card-btn'); if(b) humanPlay(+b.dataset.idx); });
   bind('#drawBtn','click',humanDraw); bind('#drawPile','click',humanDraw); bind('#passBtn','click',humanPass);
   if(over) bind('#again','click', newGame);

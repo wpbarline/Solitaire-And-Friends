@@ -1,6 +1,6 @@
-const {chromium}=require('C:/Users/Arline/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
-(async()=>{const b=await chromium.launch({channel:'msedge',headless:true});try{
+(async()=>{const b=await chromium.launch({channel:process.env.BROWSER_CHANNEL||'msedge',headless:true});try{
  for(const viewport of [{width:390,height:844},{width:1366,height:768}]){
   const context=await b.newContext({viewport,serviceWorkers:'block'}),p=await context.newPage(),errors=[];
   p.on('pageerror',e=>errors.push(e.message));

@@ -1,4 +1,4 @@
-import {haptic} from '../../assets/js/haptics.js';
+import {haptic,cancelHaptics} from '../../assets/js/haptics.js';
 /* ============================================================================
    Arline Arcade — Klondike Solitaire
    Tap-to-move (taps auto-route: foundation first, else a legal tableau). Cards
@@ -8,7 +8,7 @@ import {haptic} from '../../assets/js/haptics.js';
 import sfx from '../../assets/js/sfx.js';
 import { snapshot as abSnapshot, restore as abRestore, magicShuffle } from './abilities.js';
 import {hints, safeFoundation, validSnapshot} from './rules.js';
-import {seededRandom, shuffled, dailySeed} from '../../assets/js/game-primitives.js';
+import {seededRandom, shuffled, dailySeed,freshSeed} from '../../assets/js/game-primitives.js';
 import {createCardVisual,prepareBack} from './card-visuals.js';
 import {preferences} from '../../assets/js/preferences.js';
 import {beginReplay,recordReplay,saveReplay,validReplay,readReplays} from './replays.js';
@@ -20,6 +20,7 @@ const DECK_PATH = new URL('../../assets/cards/royal/',import.meta.url).href;
 const ASPECT = 1.5;                                        // taller cards, better use of phone height
 
 let board;
+let presentation=null;
 let cards, stock, waste, foundations, tableau, elMap, slotEl, zc=1, moves=0, won=false;
 let history=[], rewindsLeft=3, shufflesLeft=1, cardsById=new Map();   // Arline's time powers
 const posMap = new Map(); let geo=null, drag=null;
@@ -36,7 +37,7 @@ let reversing=false;
 let checkpointSequence=0,surprisesLeft=1;
 let deckReady=false,deckGeneration=0,deckReadyPromise=Promise.resolve();
 let dealing=false,dealFrame=0,dealTimer=0,dealSounds=[];
-function stopDeal(){cancelAnimationFrame(dealFrame);clearTimeout(dealTimer);dealSounds.forEach(clearTimeout);dealSounds=[];dealing=false;elMap?.forEach(e=>e.style.transitionDelay='');board?.classList.remove('dealing');}
+function stopDeal(){cancelAnimationFrame(dealFrame);clearTimeout(dealTimer);dealSounds.forEach(clearTimeout);dealSounds=[];dealing=false;elMap?.forEach(e=>e.style.transitionDelay='');board?.classList.remove('dealing');presentation?.cancel();}
 let stats={played:0,wins:0,bestMoves:null,bestTime:null,highScores:[]};
 try{stats={...stats,...JSON.parse(localStorage.getItem(STATS_KEY))};}catch{}
 function stopAuto(){clearInterval(autoTimer);autoTimer=null;}
@@ -72,13 +73,13 @@ function playHint(){
 }
 function newGame(kind='Classic',mode=drawCount,audible=true){
   if(reversing)return;
-  archiveRecording();recording=null;activeMs=0;ghostId=null;dealKind=kind;seed=kind==='Daily'?dailySeed():Math.floor(Math.random()*4294967296);
+  archiveRecording();recording=null;activeMs=0;ghostId=null;dealKind=kind;seed=kind==='Daily'?dailySeed():freshSeed();
   drawCount=[1,3].includes(Number(mode))?Number(mode):1;
   elapsed=0;winRecorded=false;if(audible){sfx.unlock();}deal();if(audible){const generation=deckGeneration;deckReadyPromise.then(()=>{if(generation===deckGeneration&&board.isConnected)animateDeal();});}initial=snapshot();startRecording();stats.played++;saveStats();saveGame();
   announce(kind==='Daily'?"Today's shared deal. Winning is not guaranteed.":'A fresh deal. Have fun!');
 }
 function restart(){
-  if(!initial||reversing)return;archiveRecording();recording=null;stopAuto();clearHint();applySnapshot(initial);history=[];shufflesLeft=1;rewindsLeft=3;surprisesLeft=1;elapsed=0;won=false;
+  if(!initial||reversing)return;stopDeal();cancelHaptics();sfx.cancelTable();archiveRecording();recording=null;stopAuto();clearHint();applySnapshot(initial);history=[];shufflesLeft=1;rewindsLeft=3;surprisesLeft=1;elapsed=0;won=false;
   startRecording();hideWin();layout(true);updateBar();announce('Same cards, fresh start.');
 }
 function readCheckpoint(){
@@ -106,7 +107,7 @@ function buildCards(){ cards=[]; let id=0; for(let s=0;s<4;s++) for(let r=1;r<=1
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 function deal(){
-  stopDeal();
+  sfx.cancelTable();stopDeal();
   stopAuto();clearHint();
   buildCards();
   const d = shuffled(cards,seededRandom(seed));
@@ -169,6 +170,7 @@ function locate(card){
 
 /* ---- interaction --------------------------------------------------------- */
 function onClick(card){
+  if(dealing){stopDeal();layout(true);}
   if(won||reversing) return;
   const loc=locate(card); if(!loc) return;
   if(loc.type==='stock'){ drawStock(); return; }
@@ -194,7 +196,7 @@ function removeRun(loc, n){
 function flipSource(loc){
   if(loc.type!=='tableau') return;
   const t=topOf(tableau[loc.col]);
-  if(t && !t.up){ t.up=true; sfx.flip(); }
+  if(t && !t.up){ t.up=true; sfx.flip();presentation?.emit({type:'card-revealed',element:elMap.get(t.id)}); }
 }
 function bump(run){ for(const c of run) elMap.get(c.id).style.zIndex = 1000 + (zc++); }
 function doFoundation(card, loc){
@@ -202,7 +204,8 @@ function doFoundation(card, loc){
   pushHistory();
   removeRun(loc, 1);
   foundations[card.suit].push(card);
-  bump([card]); flipSource(loc); moves++; sfx.foundation();haptic();
+  bump([card]); flipSource(loc); moves++; sfx.foundation();
+  presentation?.emit({type:'foundation-advanced',element:slotEl['f'+card.suit]});
   layout(false); updateBar(); checkWin();
 }
 function doTableau(run, loc, col){
@@ -215,6 +218,7 @@ function doTableau(run, loc, col){
 }
 function drawStock(){
   if(won || reversing || (!stock.length&&!waste.length)) return;recordAction=stock.length?'draw':'recycle';
+  if(dealing){stopDeal();layout(true);}
   pushHistory();
   if(stock.length){ for(let i=0;i<drawCount&&stock.length;i++){const c=stock.pop(); c.up=true; waste.push(c); bump([c]);} sfx.deal(); }
   else if(waste.length){ while(waste.length){ const c=waste.pop(); c.up=false; stock.push(c); } sfx.shuffle(); }
@@ -243,7 +247,7 @@ function checkWin(){ if(foundations.every(f=>f.length===13)){
     stats.highScores=[...(Array.isArray(stats.highScores)?stats.highScores:[]),{score,moves,seconds:elapsed,draw:drawCount,kind:dealKind,assisted:shufflesLeft===0||surprisesLeft===0,date:new Date().toISOString()}].sort((a,b)=>b.score-a.score).slice(0,20);
     winRecorded=true;saveStats();
   }
-  sfx.win();haptic('win');showWin();updateBar();
+  sfx.win();presentation?.emit({type:'game-won'});showWin();updateBar();
 } }
 
 /* ---- Arline's time powers (Braid-style) ----------------------------------- */
@@ -256,22 +260,22 @@ function pushHistory(){
   history.push(abSnapshot({stock, waste, foundations, tableau, moves}));
 }
 function rewind(){
-  if(!history.length||reversing) return;stopDeal();stopAuto();clearHint();won=false;hideWin();
+  if(!history.length||reversing) return;stopDeal();cancelHaptics();sfx.cancelTable();stopAuto();clearHint();won=false;hideWin();
   const s = abRestore(history.pop(), cardsById);
   stock = s.stock; waste = s.waste; foundations = s.foundations; tableau = s.tableau; moves = s.moves;
   recordAction='undo';haptic();sfx.undo();
   layout(false); updateBar();          // every card slides back — the Braid feel
 }
-async function timeReverse(){
+function timeReverse(){
   if(reversing||rewindsLeft<=0||!history.length)return;
   stopDeal();stopAuto();clearHint();reversing=true;sfx.mallet('reverse');rewindsLeft--;won=false;hideWin();
   const count=Math.min(3,history.length);
-  board.classList.add('time-reversing');rewindWash();
+  // Resolve the full command synchronously. Visual cancellation/navigation can
+  // never leave half a reversal or mutate another controller after a timeout.
   for(let i=0;i<count;i++){
-    recordAction='reverse';applySnapshot(history.pop());layout(false);updateBar();haptic();sfx.undo(true);
-    if(!reducedMotion.matches&&!preferences.reducedMotion)await new Promise(r=>setTimeout(r,360));
+    recordAction='reverse';applySnapshot(history.pop());updateBar();
   }
-  reversing=false;board.classList.remove('time-reversing');updateBar();
+  reversing=false;layout(false);sfx.undo(true);presentation?.emit({type:'reverse-used',elements:[...elMap.values()].filter(e=>e.classList.contains('up')).slice(-6)});updateBar(false);
   announce('Reversed '+count+' move'+(count===1?'':'s')+'. '+rewindsLeft+' Time Reverse charges left.');
 }
 function surprise(){
@@ -281,34 +285,20 @@ function surprise(){
  if(!card){announce('No helpful buried stock card is available. Your Surprise is still yours.');return;}
  stopAuto();pushHistory();stock.splice(stock.indexOf(card),1);card.up=true;waste.push(card);surprisesLeft--;moves++;recordAction='surprise';
  sfx.deal();sfx.surprise();haptic();layout(false);updateBar();
- const element=elMap.get(card.id);element.classList.add('shimmer');setTimeout(()=>element.classList.remove('shimmer'),700);
+ presentation?.emit({type:'card-revealed',element:elMap.get(card.id)});
  announce('Surprise! '+RANKS[card.rank]+SUITS[card.suit].ch+' is ready to play. This deal will be marked assisted.');
 }
 function doMagicShuffle(){
   if(won || reversing || shufflesLeft <= 0) return;
   const snap = abSnapshot({stock, waste, foundations, tableau, moves});
-  const n = magicShuffle({stock, tableau}, Math.random);
+  const n = magicShuffle({stock, tableau}, seededRandom(seed^0x53485546));
   if(n < 2){ sfx.invalid(); return; }  // fewer than 2 hidden cards: nothing to shuffle, don't spend it
   stopAuto();clearHint();history.push(snap);
   shufflesLeft--;recordAction='shuffle';
-  shimmerHidden(); sfx.shuffle();
+  presentation?.emit({type:'shuffle-used',elements:[...board.querySelectorAll('.card.down')]});sfx.shuffle();
   layout(false); updateBar();
 }
-function rewindWash(){
-  if(reducedMotion.matches||preferences.reducedMotion) return;
-  let w = document.getElementById('rewindWash');
-  if(!w){ w = document.createElement('div'); w.id = 'rewindWash'; w.className = 'rewind-wash'; document.body.appendChild(w); }
-  w.classList.remove('on'); void w.offsetWidth; w.classList.add('on');
-  clearTimeout(w._t); w._t = setTimeout(() => w.classList.remove('on'), 520);
-}
-function shimmerHidden(){
-  if(reducedMotion.matches||preferences.reducedMotion) return;
-  board.querySelectorAll('.card.down').forEach(e => {
-    e.classList.add('shimmer');
-    setTimeout(() => e.classList.remove('shimmer'), 720);
-  });
-}
-function wiggle(card){ const e=elMap.get(card.id); if(e){ e.classList.add('shake'); setTimeout(()=>e.classList.remove('shake'),320); } sfx.invalid(); }
+function wiggle(card){presentation?.emit({type:'invalid-action',element:elMap.get(card.id)});sfx.invalid();}
 
 /* ---- pointer: tap OR drag (both work) ------------------------------------ */
 function onPointerDown(ev, card){
@@ -398,7 +388,7 @@ function layout(instant){
   if(instant){ void board.offsetWidth; board.classList.remove('no-anim'); }
 }
 function animateDeal(resumed=false){
- stopDeal();sfx.shuffle();
+ stopDeal();presentation?.emit({type:'deal-started'});
  if(reducedMotion.matches||preferences.reducedMotion)return;
  dealing=true;board.classList.add('dealing');
  const source=posMap.get(topOf(stock)?.id)||{x:0,y:0};
@@ -406,7 +396,7 @@ function animateDeal(resumed=false){
  const entrance=resumed?[...tableau.flat(),...waste,...foundations.flat()]:tableau.flat();
  entrance.forEach((card,i)=>{const e=elMap.get(card.id);e.style.transform='translate('+source.x+'px,'+source.y+'px)';e.style.transitionDelay=(i*.023)+'s';});
  void board.offsetWidth;board.classList.remove('no-anim');
- dealFrame=requestAnimationFrame(()=>{layout(false);});
+ dealFrame=requestAnimationFrame(()=>{layout(false);entrance.forEach((card,i)=>presentation?.later(()=>presentation.emit({type:'card-landed',element:elMap.get(card.id)}),i*23+340));});
  dealTimer=setTimeout(stopDeal,Math.max(1100,entrance.length*23+350));
 }
 function setSlot(name,x,y){ const e=slotEl[name]; if(e) e.style.transform=`translate(${x}px,${y}px)`; }
@@ -422,14 +412,6 @@ function face(e,card){
 /* ---- win ----------------------------------------------------------------- */
 function showWin(){dispatchEvent(new CustomEvent('solitaire-state',{detail:hud()}));}
 function hideWin(){dispatchEvent(new CustomEvent('solitaire-state',{detail:hud()}));}
-function confetti(){
-  if(reducedMotion.matches||preferences.reducedMotion)return;
-  const cols=['#e9c34a','#d11f33','#39a14a','#1f6fd0','#fff0b0'];
-  for(let i=0;i<40;i++){ const d=document.createElement('div'); d.className='confetti';
-    d.style.left=Math.random()*100+'vw'; d.style.background=cols[i%cols.length];
-    d.style.animation=`drop ${1+Math.random()*1.6}s ${Math.random()*0.6}s ease-in forwards`;
-    document.body.appendChild(d); setTimeout(()=>d.remove(),3200); }
-}
 function hud(){
  const home=foundations?.reduce((n,p)=>n+p.length,0)||0;
  const potential=Math.max(100,5200-moves*10-Math.floor(elapsed/5));
@@ -460,17 +442,20 @@ function hideLoader(){
 }
 
 /* React owns controls/HUD; this controller owns only the card-table DOM. */
-export function mountSolitaire(element){
+export function mountSolitaire(element,{presentationFactory}={}){
  board=element;
  const lifecycle=new AbortController(),signal=lifecycle.signal;
+ presentation=presentationFactory?.(element,{haptic,sound:sfx,preferences})||null;
  window.__sol={
   get ready(){return deckReady;},get stock(){return stock.length;},get waste(){return waste.length;},get moves(){return moves;},
   get rewindsLeft(){return rewindsLeft;},get shufflesLeft(){return shufflesLeft;},
   get state(){return snapshot();},get drawCount(){return drawCount;},get historyLength(){return history.length;},
-  get hud(){return hud();},get milliseconds(){tickClock();return activeMs;},
+  get hud(){return hud();},get milliseconds(){if(!signal.aborted)tickClock();return activeMs;},get presentationPending(){return presentation?.pending||0;},
   raceReplay(run,resumeRace=false){if(!validReplay(run))return false;if(resumeRace&&ghostId===run.id)return true;archiveRecording();recording=null;seed=run.seed>>>0;drawCount=run.drawCount;elapsed=0;activeMs=0;ghostId=run.id;dealKind='Ghost';winRecorded=false;deal();applySnapshot(run.initial);initial=snapshot();startRecording();layout(true);updateBar();return true;},
   hint,playHint,rewind,timeReverse,surprise,shuffle:doMagicShuffle,newGame,restart,autoFinish,save:saveGame
  };
+ const controller=window.__sol;
+ for(const key of Object.keys(controller)){const descriptor=Object.getOwnPropertyDescriptor(controller,key);if(typeof descriptor.value==='function'){const command=descriptor.value;controller[key]=(...args)=>{if(!signal.aborted)return command(...args);};}}
  const resize=new ResizeObserver(()=>{if(!dealing)layout(true);});resize.observe(board);
  addEventListener('game-settings',()=>layout(true),{signal});
  document.addEventListener('visibilitychange',()=>{lastClock=performance.now();if(document.hidden){stopDeal();stopAuto();saveGame();}},{signal});
@@ -482,5 +467,5 @@ export function mountSolitaire(element){
  let publishedSecond=elapsed;
  const clock=setInterval(()=>{tickClock();if(elapsed!==publishedSecond){publishedSecond=elapsed;updateBar(false);if(elapsed%5===0)saveGame();}},250);
  deckReadyPromise.then(hideLoader);
- return ()=>{saveGame();stopDeal();stopAuto();clearInterval(clock);resize.disconnect();lifecycle.abort();removeEventListener('pointermove',onPointerMove);removeEventListener('pointerup',onPointerUp);removeEventListener('pointercancel',onPointerUp);drag=null;document.getElementById('rewindWash')?.remove();};
+ return ()=>{saveGame();stopDeal();stopAuto();cancelHaptics();sfx.cancelTable();deckGeneration++;presentation?.dispose();presentation=null;clearInterval(clock);resize.disconnect();lifecycle.abort();removeEventListener('pointermove',onPointerMove);removeEventListener('pointerup',onPointerUp);removeEventListener('pointercancel',onPointerUp);drag=null;reversing=false;document.getElementById('rewindWash')?.remove();if(window.__sol===controller)delete window.__sol;};
 }

@@ -15,6 +15,12 @@ const files=[...new Set([...previous.filter(name=>!name.includes('/fonts/')&&!/^
 const hash=createHash('sha256');
 for(const name of files){hash.update(name);hash.update(await readFile(new URL(name.endsWith('/')||name==='./'?name+'index.html':name,out)));}
 const version='solitaire-friends-react-'+hash.digest('hex').slice(0,12);
+// Identify the executing HTML, rather than mistaking fetched server metadata
+// for the running release when investigating old/new tabs or offline installs.
+for(const name of ['index.html','404.html','games/solitaire/index.html','games/solitaire/statistics.html','games/uno/index.html']){
+ const html=await readFile(new URL(name,out),'utf8');
+ await writeFile(new URL(name,out),html.replace('<head>',`<head><meta name="app-release" content="${version}">`));
+}
 await writeFile(new URL('sw.js',out),source.replace(/const CACHE='[^']+';/,"const CACHE='"+version+"';").replace(/const FILES=\[[^;]+\];/,'const FILES='+JSON.stringify(files)+';'));
 await writeFile(new URL('release.json',out),JSON.stringify({version,framework:'React + Vite',offlineFiles:files.length},null,2));
 console.log('PWA build:',version,files.length,'offline files; original art copied unchanged.');

@@ -1,0 +1,476 @@
+{
+  "version": 1,
+  "seed": 314159,
+  "drawCount": 1,
+  "elapsed": 0,
+  "initial": {
+    "stock": [],
+    "waste": [],
+    "foundations": [
+      [
+        {
+          "id": 0,
+          "up": true
+        },
+        {
+          "id": 1,
+          "up": true
+        },
+        {
+          "id": 2,
+          "up": true
+        },
+        {
+          "id": 3,
+          "up": true
+        },
+        {
+          "id": 4,
+          "up": true
+        },
+        {
+          "id": 5,
+          "up": true
+        },
+        {
+          "id": 6,
+          "up": true
+        },
+        {
+          "id": 7,
+          "up": true
+        },
+        {
+          "id": 8,
+          "up": true
+        },
+        {
+          "id": 9,
+          "up": true
+        },
+        {
+          "id": 10,
+          "up": true
+        },
+        {
+          "id": 11,
+          "up": true
+        },
+        {
+          "id": 12,
+          "up": true
+        }
+      ],
+      [
+        {
+          "id": 13,
+          "up": true
+        },
+        {
+          "id": 14,
+          "up": true
+        },
+        {
+          "id": 15,
+          "up": true
+        },
+        {
+          "id": 16,
+          "up": true
+        },
+        {
+          "id": 17,
+          "up": true
+        },
+        {
+          "id": 18,
+          "up": true
+        },
+        {
+          "id": 19,
+          "up": true
+        },
+        {
+          "id": 20,
+          "up": true
+        },
+        {
+          "id": 21,
+          "up": true
+        },
+        {
+          "id": 22,
+          "up": true
+        },
+        {
+          "id": 23,
+          "up": true
+        },
+        {
+          "id": 24,
+          "up": true
+        },
+        {
+          "id": 25,
+          "up": true
+        }
+      ],
+      [
+        {
+          "id": 26,
+          "up": true
+        },
+        {
+          "id": 27,
+          "up": true
+        },
+        {
+          "id": 28,
+          "up": true
+        },
+        {
+          "id": 29,
+          "up": true
+        },
+        {
+          "id": 30,
+          "up": true
+        },
+        {
+          "id": 31,
+          "up": true
+        },
+        {
+          "id": 32,
+          "up": true
+        },
+        {
+          "id": 33,
+          "up": true
+        },
+        {
+          "id": 34,
+          "up": true
+        },
+        {
+          "id": 35,
+          "up": true
+        },
+        {
+          "id": 36,
+          "up": true
+        },
+        {
+          "id": 37,
+          "up": true
+        },
+        {
+          "id": 38,
+          "up": true
+        }
+      ],
+      [
+        {
+          "id": 39,
+          "up": true
+        },
+        {
+          "id": 40,
+          "up": true
+        },
+        {
+          "id": 41,
+          "up": true
+        },
+        {
+          "id": 42,
+          "up": true
+        },
+        {
+          "id": 43,
+          "up": true
+        },
+        {
+          "id": 44,
+          "up": true
+        },
+        {
+          "id": 45,
+          "up": true
+        },
+        {
+          "id": 46,
+          "up": true
+        },
+        {
+          "id": 47,
+          "up": true
+        },
+        {
+          "id": 48,
+          "up": true
+        },
+        {
+          "id": 49,
+          "up": true
+        },
+        {
+          "id": 50,
+          "up": true
+        }
+      ]
+    ],
+    "tableau": [
+      [
+        {
+          "id": 51,
+          "up": true
+        }
+      ],
+      [],
+      [],
+      [],
+      [],
+      [],
+      []
+    ],
+    "moves": 0
+  },
+  "state": {
+    "stock": [],
+    "waste": [],
+    "foundations": [
+      [
+        {
+          "id": 0,
+          "up": true
+        },
+        {
+          "id": 1,
+          "up": true
+        },
+        {
+          "id": 2,
+          "up": true
+        },
+        {
+          "id": 3,
+          "up": true
+        },
+        {
+          "id": 4,
+          "up": true
+        },
+        {
+          "id": 5,
+          "up": true
+        },
+        {
+          "id": 6,
+          "up": true
+        },
+        {
+          "id": 7,
+          "up": true
+        },
+        {
+          "id": 8,
+          "up": true
+        },
+        {
+          "id": 9,
+          "up": true
+        },
+        {
+          "id": 10,
+          "up": true
+        },
+        {
+          "id": 11,
+          "up": true
+        },
+        {
+          "id": 12,
+          "up": true
+        }
+      ],
+      [
+        {
+          "id": 13,
+          "up": true
+        },
+        {
+          "id": 14,
+          "up": true
+        },
+        {
+          "id": 15,
+          "up": true
+        },
+        {
+          "id": 16,
+          "up": true
+        },
+        {
+          "id": 17,
+          "up": true
+        },
+        {
+          "id": 18,
+          "up": true
+        },
+        {
+          "id": 19,
+          "up": true
+        },
+        {
+          "id": 20,
+          "up": true
+        },
+        {
+          "id": 21,
+          "up": true
+        },
+        {
+          "id": 22,
+          "up": true
+        },
+        {
+          "id": 23,
+          "up": true
+        },
+        {
+          "id": 24,
+          "up": true
+        },
+        {
+          "id": 25,
+          "up": true
+        }
+      ],
+      [
+        {
+          "id": 26,
+          "up": true
+        },
+        {
+          "id": 27,
+          "up": true
+        },
+        {
+          "id": 28,
+          "up": true
+        },
+        {
+          "id": 29,
+          "up": true
+        },
+        {
+          "id": 30,
+          "up": true
+        },
+        {
+          "id": 31,
+          "up": true
+        },
+        {
+          "id": 32,
+          "up": true
+        },
+        {
+          "id": 33,
+          "up": true
+        },
+        {
+          "id": 34,
+          "up": true
+        },
+        {
+          "id": 35,
+          "up": true
+        },
+        {
+          "id": 36,
+          "up": true
+        },
+        {
+          "id": 37,
+          "up": true
+        },
+        {
+          "id": 38,
+          "up": true
+        }
+      ],
+      [
+        {
+          "id": 39,
+          "up": true
+        },
+        {
+          "id": 40,
+          "up": true
+        },
+        {
+          "id": 41,
+          "up": true
+        },
+        {
+          "id": 42,
+          "up": true
+        },
+        {
+          "id": 43,
+          "up": true
+        },
+        {
+          "id": 44,
+          "up": true
+        },
+        {
+          "id": 45,
+          "up": true
+        },
+        {
+          "id": 46,
+          "up": true
+        },
+        {
+          "id": 47,
+          "up": true
+        },
+        {
+          "id": 48,
+          "up": true
+        },
+        {
+          "id": 49,
+          "up": true
+        },
+        {
+          "id": 50,
+          "up": true
+        }
+      ]
+    ],
+    "tableau": [
+      [
+        {
+          "id": 51,
+          "up": true
+        }
+      ],
+      [],
+      [],
+      [],
+      [],
+      [],
+      []
+    ],
+    "moves": 0
+  },
+  "history": [],
+  "shufflesLeft": 1,
+  "rewindsLeft": 3,
+  "surprisesLeft": 1
+}

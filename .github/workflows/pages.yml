@@ -32,6 +32,26 @@ jobs:
         run: npm ci
       - name: Build React game and offline assets
         run: npm run build
+      - name: Verify protected original artwork
+        run: python3 tools/protect_card_art.py
+      - name: Install pinned browser test tools
+        run: |
+          npm install --no-save --package-lock=false playwright@1.62.1
+          npx playwright install --with-deps chromium
+      - name: Verify production runtime, saves, offline delivery and presentation
+        env:
+          BROWSER_CHANNEL: chromium
+          GAME_URL: http://127.0.0.1:8773/Solitaire-And-Friends/
+        run: |
+          npm run preview -- --port 8773 > /tmp/solitaire-preview.log 2>&1 &
+          for i in $(seq 1 30); do curl --fail --silent "$GAME_URL" > /dev/null && break; sleep 1; done
+          node tools/verify-production.cjs
+      - name: Retain verification captures on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-evidence
+          path: evidence/
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact

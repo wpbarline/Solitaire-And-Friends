@@ -1,6 +1,6 @@
-const {chromium}=require('C:/Users/Arline/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
-(async()=>{const b=await chromium.launch({channel:'msedge',headless:true});try{
+(async()=>{const b=await chromium.launch({channel:process.env.BROWSER_CHANNEL||'msedge',headless:true});try{
  const p=await b.newPage({viewport:{width:390,height:844}}),errors=[];p.on('pageerror',e=>errors.push(e.message));
  await p.goto('http://127.0.0.1:8773/Solitaire-And-Friends/');
  await p.evaluate(async()=>{localStorage.setItem('solitaire-friends-player-name','Arline');localStorage.setItem('other-app-data','keep');await caches.open('other-app-cache');await navigator.serviceWorker.ready;});
