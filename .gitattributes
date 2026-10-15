@@ -1,0 +1,22 @@
+# These protected source files were recorded with CRLF bytes on Windows.
+# Reproduce those exact baseline bytes on every checkout; never change hashes.
+assets/css/deck-prefs.css text eol=crlf
+assets/js/deck-faces.js text eol=crlf
+assets/js/deck-prefs.js text eol=crlf
+card-maker.html text eol=crlf
+English_pattern_playing_cards_deck.svg text eol=crlf
+svg_primitive/courts/club_K.svg text eol=crlf
+svg_primitive/courts/club_Q.svg text eol=crlf
+svg_primitive/courts/diamond_J.svg text eol=crlf
+svg_primitive/courts/diamond_K.svg text eol=crlf
+svg_primitive/courts/diamond_Q.svg text eol=crlf
+svg_primitive/courts/heart_J.svg text eol=crlf
+svg_primitive/courts/heart_K.svg text eol=crlf
+svg_primitive/courts/heart_Q.svg text eol=crlf
+svg_primitive/courts/spade_J.svg text eol=crlf
+svg_primitive/courts/spade_K.svg text eol=crlf
+svg_primitive/courts/spade_Q.svg text eol=crlf
+svg_primitive/ranks/10.svg text eol=crlf
+svg_primitive/README.md text eol=crlf
+tools/gen_deck.py text eol=crlf
+UNO_cards_deck.svg text eol=crlf
